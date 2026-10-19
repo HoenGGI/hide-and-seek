@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hide and Seek</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Hide and Seek</h1>
+  <div id="hud"><span id="status">Seeker is counting...</span><span id="timer">30.0</span></div>
+  <div id="wrap">
+    <canvas id="game" width="800" height="500"></canvas>
+    <div id="overlay" hidden>
+      <h2 id="result"></h2>
+      <p id="detail"></p>
+      <button id="restart">Play again</button>
+    </div>
+  </div>
+  <p class="help">Move with arrow keys or WASD. Stay out of the seeker's sight and survive 30 seconds.</p>
+  <script src="game.js"></script>
+</body>
+</html>

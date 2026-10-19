@@ -1,0 +1,12 @@
+body { margin: 0; padding: 12px; background: #1b1e24; color: #eee; font-family: system-ui, sans-serif; text-align: center; }
+h1 { margin: 4px 0 8px; font-size: 1.4rem; }
+#hud { display: flex; justify-content: space-between; max-width: 800px; margin: 0 auto 6px; font-size: 1.1rem; }
+#timer { font-variant-numeric: tabular-nums; font-weight: bold; }
+#wrap { position: relative; display: inline-block; max-width: 100%; }
+canvas { background: #2f4a33; border: 2px solid #555; max-width: 100%; height: auto; display: block; }
+#overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, .7); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#overlay[hidden] { display: none; }
+#overlay h2 { font-size: 2.2rem; margin: 0 0 8px; }
+button { font-size: 1.1rem; padding: 8px 20px; cursor: pointer; border: 0; border-radius: 6px; background: #4caf50; color: #fff; }
+button:hover { background: #5dc061; }
+.help { color: #aaa; font-size: .9rem; }
