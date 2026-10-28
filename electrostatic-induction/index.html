@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>정전기 유도 실험실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">
+<style>
+/* Layout: 모눈종이 실험 노트. 위쪽 실험 칸에 실에 매단 금속 막대를 펜으로 그리고, 바로 아래 재료 칸에서 가져갈 막대를 고른다. 그 밑에 관찰 기록과 개념 정리를 왼쪽 정렬로 적는다. */
+:root{
+  --page:#eef2f7;        /* 노트 바탕 */
+  --paper:#fbfcfe;       /* 실험 칸 */
+  --grid:rgba(52,96,168,.11);
+  --ink:#1c2a45;         /* 남색 펜 */
+  --ink-2:#56637b;
+  --line:rgba(28,42,69,.24);
+  --plus:#cf3a32;        /* 빨간 펜: (+) */
+  --minus:#2762cc;       /* 파란 펜: (−) */
+  --mark:#fff07a;        /* 형광펜 */
+  --force:#0b8564;       /* 힘 화살표 */
+  --tray:#e2e8f1;
+  --e-fill:#fbfcfe;
+  --t-glass:rgba(110,185,220,.2);
+  --t-plastic:rgba(236,190,40,.3);
+  --t-metal:rgba(140,152,170,.32);
+
+  --font-display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0e1625; --paper:#141f33; --grid:rgba(140,180,255,.08);
+    --ink:#e3eaf6; --ink-2:#9ba9c1; --line:rgba(227,234,246,.22);
+    --plus:#ff8b80; --minus:#88b7ff; --mark:rgba(255,226,80,.3); --force:#52d2a9;
+    --tray:#1a263c; --e-fill:#141f33;
+    --t-glass:rgba(130,200,235,.16); --t-plastic:rgba(245,205,80,.24); --t-metal:rgba(185,196,212,.2);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0e1625; --paper:#141f33; --grid:rgba(140,180,255,.08);
+  --ink:#e3eaf6; --ink-2:#9ba9c1; --line:rgba(227,234,246,.22);
+  --plus:#ff8b80; --minus:#88b7ff; --mark:rgba(255,226,80,.3); --force:#52d2a9;
+  --tray:#1a263c; --e-fill:#141f33;
+  --t-glass:rgba(130,200,235,.16); --t-plastic:rgba(245,205,80,.24); --t-metal:rgba(185,196,212,.2);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--ink);
+  background-color:var(--page);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:24px 24px;
+  font-family:var(--font-body);
+  font-size:1.0625rem;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:32px 56px;
+  display:grid;
+  gap:22px;
+}
+
+/* 머리말 */
+.top{display:grid;gap:6px;max-width:62ch}
+h1{
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:400;
+  font-size:clamp(2.4rem, 6.5vw, 3.6rem);
+  line-height:1.05;
+  text-wrap:balance;
+}
+.lede{margin:0;color:var(--ink-2)}
+.unit{margin:0;color:var(--ink-2);font-size:.875rem}
+
+.btn{
+  appearance:none;cursor:pointer;
+  font:inherit;font-size:.95rem;color:var(--ink);
+  background:var(--paper);border:1.5px solid var(--ink);border-radius:6px;
+  padding:6px 14px;line-height:1.4;
+  box-shadow:2px 2px 0 var(--line);
+}
+.btn:hover{background:var(--tray)}
+.btn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--line)}
+.btn:focus-visible,summary:focus-visible{outline:3px solid var(--minus);outline-offset:3px}
+
+/* 실험 칸 */
+.board{
+  border:2px solid var(--ink);
+  border-bottom-style:dashed;
+  border-radius:6px 6px 0 0;
+  padding:16px 20px 14px;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size:12px 12px;
+  display:grid;
+  gap:6px;
+}
+.legend{margin:0;display:flex;flex-wrap:wrap;gap:4px 22px;font-size:.9rem;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{width:18px;height:18px;flex:none}
+.legend b{color:var(--ink);font-weight:600}
+
+#stage{display:block;width:100%;height:auto;aspect-ratio:2/1;max-width:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+.board-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.hint{margin:0;font-family:var(--font-display);font-size:1.35rem;line-height:1.4;min-width:0;flex:1 1 280px}
+
+/* 재료 칸 */
+.ledge{
+  background:var(--tray);
+  border:2px solid var(--ink);
+  border-top:0;
+  border-radius:0 0 6px 6px;
+  padding:14px 18px 16px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap:12px 24px;
+}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:6px;font-family:var(--font-display);font-size:1.25rem;line-height:1.3}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.pick{
+  position:relative;display:inline-flex;align-items:center;gap:8px;
+  padding:4px 12px 4px 8px;border-radius:6px;
+  background:var(--paper);border:1.5px solid var(--line);
+  color:var(--ink);font-size:.95rem;line-height:1.4;cursor:pointer;
+}
+.pick:hover{border-color:var(--ink)}
+.pick.on{border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.pick.on span{background:linear-gradient(transparent 55%, var(--mark) 55%)}
+.pick input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.pick:has(input:focus-visible){outline:3px solid var(--minus);outline-offset:2px}
+.pick svg{width:40px;height:24px;flex:none}
+.pick svg .ln{stroke-width:1.4px;vector-effect:non-scaling-stroke}
+.pick em{font-style:normal;font-weight:600}
+.pick.plain{padding-left:12px}
+
+/* 실험 그림 */
+.ln{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ln-soft{stroke-opacity:.45;stroke-width:2}
+.t-glass{fill:var(--t-glass)} .t-plastic{fill:var(--t-plastic)} .t-metal{fill:var(--t-metal)}
+.pp{fill:none;stroke:var(--plus);stroke-width:2.6;stroke-linecap:round}
+.el circle{fill:var(--e-fill);stroke:var(--minus);stroke-width:2.2}
+.el path{fill:none;stroke:var(--minus);stroke-width:2.4;stroke-linecap:round}
+.lbl{font-family:var(--font-display);font-size:28px;fill:var(--ink)}
+.lbl .qp,.end-t.qp{fill:var(--plus)} .lbl .qm,.end-t.qm{fill:var(--minus)} .lbl .q0{fill:var(--ink-2)}
+.end-t{font-family:var(--font-display);font-size:26px}
+.drag{cursor:grab}
+.drag.is-dragging{cursor:grabbing}
+.thread{stroke:var(--ink);stroke-width:1.5;stroke-opacity:.8}
+.pivot{fill:var(--ink)}
+.arw{fill:none;stroke:var(--force);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.arw-t{font-family:var(--font-display);font-size:28px;fill:var(--force)}
+
+/* 관찰 기록과 개념 정리 */
+.notes{display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr));gap:28px 48px;margin-top:10px}
+.notes section{min-width:0;display:grid;gap:10px;align-content:start}
+.notes h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:1.75rem;line-height:1.25}
+.notes p{margin:0}
+.record{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-width:60ch}
+.record li{padding-left:16px;position:relative}
+.record li::before{content:"";position:absolute;left:0;top:.8em;width:7px;height:1.5px;background:var(--ink-2)}
+.record b{font-weight:600;background:linear-gradient(transparent 55%, var(--mark) 55%)}
+.predict{display:grid;gap:10px;padding-top:14px;border-top:1.5px dashed var(--line)}
+.predict h3{margin:0;font-size:1rem;font-weight:600}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choices .btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.verdict{color:var(--ink-2);min-height:1.7em}
+.verdict.ok{color:var(--force);font-weight:600}
+dl{margin:0;display:grid;gap:12px;max-width:62ch}
+dt{font-family:var(--font-display);font-size:1.3rem;line-height:1.3}
+dd{margin:2px 0 0}
+.quiz{margin:0;padding-left:1.4em;display:grid;gap:10px;max-width:62ch}
+.quiz li::marker{font-weight:600;color:var(--ink-2)}
+details summary{cursor:pointer;color:var(--minus);font-size:.9rem;width:fit-content}
+details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
+.fine{margin:0;color:var(--ink-2);font-size:.8125rem;max-width:70ch}
+
+@media (max-width:560px){
+  .board{padding:12px 10px 10px}
+  .ledge{padding:12px}
+  .hint{font-size:1.2rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .btn:active{transform:none}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <h1>정전기 유도 실험실</h1>
+    <p class="lede">전기를 띤 막대를 실에 매단 금속 막대에 가까이 가져가 보세요. 금속 속 전자가 어느 쪽 끝으로 몰리는지, 금속 막대가 왜 끌려오는지 직접 움직여 보며 확인할 수 있어요.</p>
+    <p class="unit">중학교 2학년 과학, 전기와 자기 단원</p>
+  </header>
+
+  <div>
+    <div class="board">
+      <p class="legend">
+        <span><svg viewBox="-9 -9 18 18" aria-hidden="true"><path class="pp" d="M-5 0h10M0 -5v10"/></svg><b>원자핵(+)</b> 제자리에 있어요</span>
+        <span><svg viewBox="-9 -9 18 18" aria-hidden="true"><g class="el"><circle r="6.5"/><path d="M-3.5 0h7"/></g></svg><b>전자(−)</b> 금속 안에서 자유롭게 움직여요</span>
+      </p>
+
+      <svg id="stage" viewBox="0 0 800 400" role="img" aria-label="정전기 유도 실험 그림. 대전된 막대를 끌어서 움직일 수 있어요.">
+        <g id="scene"></g>
+      </svg>
+
+      <div class="board-foot">
+        <p class="hint" id="hint"></p>
+        <button class="btn" type="button" id="act">막대 멀리 치우기</button>
+      </div>
+    </div>
+
+    <div class="ledge" id="ledge">
+      <fieldset id="pickRod">
+        <legend>가까이 가져갈 막대</legend>
+        <div class="chips"></div>
+      </fieldset>
+      <fieldset id="pickLevel">
+        <legend>막대가 띤 전하의 양</legend>
+        <div class="chips"></div>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="notes">
+    <section aria-labelledby="rec-h">
+      <h2 id="rec-h">관찰 기록</h2>
+      <ul class="record" id="record" aria-live="polite"></ul>
+      <div class="predict">
+        <h3 id="predict-q"></h3>
+        <div class="choices" id="choices"></div>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section aria-labelledby="sum-h">
+      <h2 id="sum-h">개념 정리</h2>
+      <dl>
+        <div>
+          <dt>정전기 유도</dt>
+          <dd>전기를 띤 물체를 금속에 가까이 하면, 금속 속 전자가 끌려오거나 밀려나 한쪽 끝으로 몰려요. 가까운 쪽 끝에는 가져간 물체와 반대 종류의 전하가, 먼 쪽 끝에는 같은 종류의 전하가 생겨요.</dd>
+        </div>
+        <div>
+          <dt>도체와 절연체</dt>
+          <dd>금속처럼 전자가 자유롭게 움직이는 물체를 도체, 플라스틱이나 유리처럼 전자가 잘 움직이지 못하는 물체를 절연체라고 해요. 전자가 막대 끝까지 몰리는 모습은 도체에서 잘 나타나요.</dd>
+        </div>
+        <div>
+          <dt>금속 막대가 끌려오는 까닭</dt>
+          <dd>가까운 쪽 끝의 반대 전하와는 서로 끌어당기고, 먼 쪽 끝의 같은 전하와는 서로 밀어내요. 가까운 쪽이 더 가까워서 끌어당기는 힘이 더 크기 때문에 금속 막대는 끌려와요.</dd>
+        </div>
+      </dl>
+
+      <h2>생각해 보기</h2>
+      <ol class="quiz">
+        <li>(−)전하를 띤 막대를 금속 막대의 왼쪽 끝에 가까이 하면, 금속 막대의 오른쪽 끝은 어떤 전하를 띨까요?
+          <details><summary>답 보기</summary><p>(−)전하를 띠어요. 전자가 (−)전하에 밀려 먼 쪽인 오른쪽 끝으로 몰리기 때문이에요.</p></details>
+        </li>
+        <li>(+)전하를 띤 막대를 가져가도, (−)전하를 띤 막대를 가져가도 금속 막대가 끌려오는 까닭은 무엇일까요?
+          <details><summary>답 보기</summary><p>어느 경우든 가까운 쪽 끝에 가져간 막대와 반대 종류의 전하가 모여요. 그래서 끌어당기는 힘이 밀어내는 힘보다 커요.</p></details>
+        </li>
+        <li>가까이 있던 막대를 멀리 치우면 금속 막대 속 전자는 어떻게 될까요?
+          <details><summary>답 보기</summary><p>전자를 끌어당기거나 밀어내던 힘이 사라지므로 전자가 다시 고르게 퍼져요. "막대 멀리 치우기"를 눌러 확인해 보세요.</p></details>
+        </li>
+      </ol>
+      <p class="fine">이 시뮬레이터는 전자의 움직임을 눈으로 보기 쉽도록 전자 수를 줄여서 단순하게 나타냈어요.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  document.documentElement.lang = 'ko';
+  const $ = s => document.querySelector(s);
+
+  const RODS = {
+    glass:   { name:'유리 막대',     tint:'t-glass',   sign:+1, shine:true },
+    plastic: { name:'플라스틱 막대', tint:'t-plastic', sign:-1, shine:false },
+    metal:   { name:'금속 막대',     tint:'t-metal',   sign:0,  shine:true },
+  };
+  const LEVELS = [{ v:2, t:'적게' }, { v:3, t:'보통' }, { v:5, t:'많이' }];
+  const HW = 150, HH = 22;                       // 막대 반쪽 크기 (그림 좌표)
+  const THREAD = 160, S = 0.9, KF = 7600, MAX_TH = 0.8;
+  // 넓은 화면은 가로 그림, 휴대폰은 세로 그림
+  const LAYOUTS = {
+    wide: { W:800, H:400, PIVOT:{ x:330, y:64 }, HOME:{ x:640, y:270 } },
+    tall: { W:480, H:600, PIVOT:{ x:262, y:64 }, HOME:{ x:340, y:520 } },
+  };
+  const narrowMQ = matchMedia('(max-width: 600px)');
+  let L = LAYOUTS.wide;
+
+  // 막대 안에서 (+)와 (−) 한 쌍이 놓이는 자리 8개, 전자가 더 들어갈 빈자리 5개
+  const extraIdx = new Set([1,4,6,8,11]);
+  const cells = Array.from({ length:13 }, (_, i) => ({ x:-132 + 22*i, extra:extraIdx.has(i) }));
+  const PAIRS = cells.filter(c => !c.extra).sort((a, b) => Math.abs(b.x) - Math.abs(a.x))
+    .map(c => ({ px:c.x - 4, py:-9, ex:c.x + 4, ey:9 }));
+  const EXTRAS = cells.filter(c => c.extra).sort((a, b) => Math.abs(a.x) - Math.abs(b.x));
+  const E_END = { right:136, left:-128 };
+
+  const plusG = (x, y) => `<path class="pp" d="M${x-5} ${y}h10M${x} ${y-5}v10"/>`;
+  const elecG = (x, y) => `<g class="el"><circle cx="${x.toFixed(1)}" cy="${y}" r="6.5"/><path d="M${(x-3.5).toFixed(1)} ${y}h7"/></g>`;
+
+  function rodShape(id) {
+    return `<rect class="${RODS[id].tint} ln" x="${-HW}" y="${-HH}" width="${HW*2}" height="${HH*2}" rx="${HH}"/>` +
+      (RODS[id].shine ? `<path class="ln ln-soft" d="M-126 -16H118"/>` : '');
+  }
+  // 대전된 막대: (+)는 전자를 잃은 자리, (−)는 전자를 더 얻은 자리
+  function rodCharges(q) {
+    const lost = Math.max(0, q), gained = Math.max(0, -q);
+    let out = '';
+    PAIRS.forEach((c, i) => { out += plusG(c.px, c.py); if (i >= lost) out += elecG(c.ex, c.ey); });
+    for (let i = 0; i < gained; i++) out += elecG(EXTRAS[i].x, 0);
+    return out;
+  }
+  // 금속 막대: (+)는 제자리에 있고, 자유 전자만 sh 방향 끝으로 몰린다 (sh: −0.5 ~ 0.5)
+  function metalCharges(sh) {
+    const end = sh > 0 ? E_END.right : E_END.left, f = Math.abs(sh);
+    return PAIRS.map(c => plusG(c.px, c.py) + elecG(c.ex + (end - c.ex) * f, c.ey)).join('');
+  }
+
+  function josa(word, pair) {
+    const c = word.charCodeAt(word.length - 1);
+    const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0;
+    const [a, b] = pair.split('/');
+    return word + (has ? a : b);
+  }
+  const fmtQ = q => q > 0 ? `+${q}` : q < 0 ? `−${-q}` : '0';
+  const qClass = q => q > 0 ? 'qp' : q < 0 ? 'qm' : 'q0';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // 상태
+  const st = { rod:'glass', level:3, predict:null, seen:false };
+  const pos = { x:0, y:0 };
+  const pend = { th:0, w:0 };
+  const ind = { s:0, drawn:'', bucket:'' };     // 전자가 쏠린 정도와 방향
+  let raf = 0, lastT = 0, drag = null;
+
+  const charge = () => RODS[st.rod].sign * st.level;
+  const rodName = () => RODS[st.rod].name;
+
+  const svg = $('#stage'), scene = $('#scene');
+  function svgPt(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function setAttr(el, name, val) { if (el && el.getAttribute(name) !== String(val)) el.setAttribute(name, val); }
+
+  // 실험 그림 그리기
+  function buildScene() {
+    const P = L.PIVOT, post = P.x - HW*S - 34, foot = L.H - 8, q = charge();
+    scene.innerHTML = `
+      <path class="ln" d="M${post - 50} ${foot}H${post + 70}M${post} ${foot}V${P.y}H${P.x + 22}"/>
+      <line id="thread" class="thread" x1="${P.x}" y1="${P.y}" x2="${P.x}" y2="${P.y + THREAD}"/>
+      <circle class="pivot" cx="${P.x}" cy="${P.y}" r="4"/>
+      <text class="lbl" x="${post}" y="40"><tspan>매달린 금속 막대</tspan><tspan class="q0" dx="12">중성</tspan></text>
+      <g id="gH"><g>${rodShape('metal')}</g><g class="chg">${metalCharges(ind.s)}</g></g>
+      <g id="ends"></g>
+      <g id="arrows"></g>
+      <g id="gM" class="drag"><g>${rodShape(st.rod)}</g><g>${rodCharges(q)}</g></g>
+      <text id="lM" class="lbl" text-anchor="middle"><tspan>${rodName()}</tspan><tspan class="${qClass(q)}" dx="12">${fmtQ(q)}</tspan></text>`;
+    ind.drawn = ind.s.toFixed(3);
+    draw({ x:0, y:0, mag:0 });
+  }
+
+  function bobGeo(th) {
+    const ax = L.PIVOT.x + THREAD * Math.sin(th), ay = L.PIVOT.y + THREAD * Math.cos(th);
+    return { ax, ay, cx:ax, cy:ay + HH*S, hw:HW*S, hh:HH*S };
+  }
+  const rodGeo = () => ({ cx:pos.x, cy:pos.y, hw:HW*S, hh:HH*S });
+  function gapDist(g, m) {
+    const gx = Math.max(0, Math.abs(g.cx - m.cx) - (g.hw + m.hw)), gy = Math.max(0, Math.abs(g.cy - m.cy) - (g.hh + m.hh));
+    return Math.hypot(gx, gy) + 30;
+  }
+
+  function arrow(x, y, ux, uy, len) {
+    const x2 = x + ux*len, y2 = y + uy*len, h = 12;
+    const lx = x2 - ux*h - uy*h*.6, ly = y2 - uy*h + ux*h*.6;
+    const rx = x2 - ux*h + uy*h*.6, ry = y2 - uy*h - ux*h*.6;
+    return `M${x.toFixed(1)} ${y.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}M${lx.toFixed(1)} ${ly.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}L${rx.toFixed(1)} ${ry.toFixed(1)}`;
+  }
+
+  function draw(F) {
+    // 실에 매달린 막대는 기울지 않고 실 끝을 따라 옮겨 간다
+    const g = bobGeo(pend.th), m = rodGeo();
+    setAttr($('#gH'), 'transform', `translate(${g.ax.toFixed(1)} ${g.ay.toFixed(1)}) scale(${S}) translate(0 ${HH})`);
+    setAttr($('#thread'), 'x2', g.ax.toFixed(1)); setAttr($('#thread'), 'y2', g.ay.toFixed(1));
+    setAttr($('#gM'), 'transform', `translate(${pos.x.toFixed(1)} ${pos.y.toFixed(1)}) scale(${S})`);
+    // 매달린 막대가 위에 있으면 이름표를 아래로 내려 겹치지 않게 한다
+    const below = g.cy < m.cy && Math.abs(g.cx - m.cx) < g.hw + m.hw + 40 && m.cy + m.hh + 40 < L.H;
+    setAttr($('#lM'), 'x', m.cx.toFixed(1));
+    setAttr($('#lM'), 'y', (below ? m.cy + m.hh + 36 : m.cy - m.hh - 16).toFixed(1));
+
+    // 금속 막대 양 끝에 생긴 전하
+    let ends = '';
+    if (Math.abs(ind.s) > 0.12) {
+      // 가져간 막대와 반대쪽(위나 아래)에 적어 겹치지 않게 한다
+      const eSide = ind.s > 0 ? 1 : -1, y = (m.cy > g.cy ? g.cy - g.hh - 12 : g.cy + g.hh + 32).toFixed(1);
+      ends += `<text class="end-t qm" x="${(g.cx + eSide*(g.hw - 18)).toFixed(1)}" y="${y}" text-anchor="middle">(−)</text>`;
+      ends += `<text class="end-t qp" x="${(g.cx - eSide*(g.hw - 18)).toFixed(1)}" y="${y}" text-anchor="middle">(+)</text>`;
+    }
+    const endsEl = $('#ends');
+    if (endsEl.innerHTML !== ends) endsEl.innerHTML = ends;
+
+    const mag = Math.abs(F.mag);
+    let out = '';
+    if (mag > 0.35) {
+      const ux = F.x / mag, uy = F.y / mag, len = clamp(18 + mag * 3, 18, 110);
+      out += `<path class="arw" d="${arrow(g.cx, g.cy, ux, uy, len)}"/>`;
+      out += `<path class="arw" d="${arrow(m.cx, m.cy, -ux, -uy, len)}"/>`;
+      // 두 화살표 사이에서 옆으로 비켜 적는다
+      const mx = (g.cx + m.cx) / 2, my = (g.cy + m.cy) / 2, side = uy > 0 ? 1 : -1;
+      const tx = mx + uy*side*46, ty = my - ux*side*46 + 9;
+      out += `<text class="arw-t" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle">인력</text>`;
+    }
+    const arrows = $('#arrows');
+    if (arrows.innerHTML !== out) arrows.innerHTML = out;
+  }
+
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(0.05, lastT ? (t - lastT) / 1000 : 0.016);
+    lastT = t;
+    const q = charge(), m = rodGeo();
+
+    // 정전기 유도: (+)를 가져가면 전자가 가까운 끝으로, (−)를 가져가면 먼 끝으로 몰린다
+    const g0 = bobGeo(pend.th), d0 = gapDist(g0, m);
+    // 막대가 금속 막대의 끝 쪽(가로 방향)에 있을수록 전자가 막대 길이 방향으로 많이 몰린다
+    const along = (m.cx - g0.cx) / (Math.hypot(m.cx - g0.cx, m.cy - g0.cy) || 1);
+    const target = Math.min(0.5, Math.abs(q) * 2500 / (d0 * d0)) * along * Math.sign(q);
+    ind.s += (target - ind.s) * Math.min(1, dt * 6);
+    const key = ind.s.toFixed(3);
+    if (key !== ind.drawn) { ind.drawn = key; $('#gH .chg').innerHTML = metalCharges(ind.s); }
+
+    // 가까운 끝에 모인 반대 전하 때문에 금속 막대는 언제나 끌려온다
+    const qEff = -Math.sign(q) * Math.abs(ind.s) * 2.5;
+    const steps = 6, h = dt / steps;
+    let F = { x:0, y:0, mag:0 };
+    for (let i = 0; i < steps; i++) {
+      const g = bobGeo(pend.th);
+      const dx = g.cx - m.cx, dy = g.cy - m.cy, len = Math.hypot(dx, dy) || 1, d = gapDist(g, m);
+      const mag = KF * qEff * q / (d * d);
+      F = { x:mag * dx / len, y:mag * dy / len, mag };
+      const ft = F.x * Math.cos(pend.th) - F.y * Math.sin(pend.th);
+      const acc = ft - 30 * Math.sin(pend.th) - 3.2 * pend.w;
+      pend.w += acc * h; pend.th += pend.w * h;
+      if (pend.th > MAX_TH) { pend.th = MAX_TH; pend.w = 0; }
+      if (pend.th < -MAX_TH) { pend.th = -MAX_TH; pend.w = 0; }
+    }
+    draw(F);
+
+    const bucket = Math.abs(ind.s) < 0.06 ? 'far' : 'near';
+    if (Math.abs(ind.s) > 0.2 && !st.seen) { st.seen = true; updatePredict(); }
+    if (bucket !== ind.bucket) { ind.bucket = bucket; updateHint(); updateRecord(); }
+  }
+
+  // 끌기
+  svg.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.drag');
+    if (!g) return;
+    const p = svgPt(e);
+    drag = { id:e.pointerId, g, dx:p.x - pos.x, dy:p.y - pos.y };
+    g.setPointerCapture(e.pointerId);
+    g.classList.add('is-dragging');
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = svgPt(e);
+    pos.x = clamp(p.x - drag.dx, HW*S, L.W - HW*S);
+    pos.y = clamp(p.y - drag.dy, HH*S, L.H - HH*S);
+  });
+  const endDrag = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.g.classList.remove('is-dragging');
+    drag = null;
+  };
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  // 화면 글
+  function updateHint() {
+    $('#hint').textContent = ind.bucket === 'near'
+      ? '더 가까이 가져가거나 멀리 떨어뜨려 보세요. 전자의 위치가 어떻게 바뀌나요?'
+      : `${josa(rodName(), '을/를')} 끌어서 금속 막대에 가까이 가져가 보세요.`;
+  }
+
+  function updateRecord() {
+    const q = charge(), name = rodName();
+    let lines;
+    if (ind.bucket !== 'near') {
+      lines = [
+        `${josa(name, '이/가')} 아직 멀리 있어서 금속 막대 속 전자가 고르게 퍼져 있어요.`,
+        '지금 금속 막대는 (+)전하와 (−)전하의 양이 같고, 어느 쪽 끝에도 전하가 몰려 있지 않아요.',
+      ];
+    } else {
+      lines = [
+        `가져간 ${name} <span class="${qClass(q)}">${fmtQ(q)}</span>, 매달린 금속 막대 <span class="q0">중성</span>`,
+        q > 0
+          ? '금속 속 전자가 (+)전하에 끌려 <b>가까운 쪽 끝</b>으로 몰려요. 먼 쪽 끝에는 (+)전하가 남아요.'
+          : '금속 속 전자가 (−)전하에 밀려 <b>먼 쪽 끝</b>으로 몰려요. 가까운 쪽 끝에는 (+)전하가 남아요.',
+        '이처럼 전기를 띤 물체를 가까이 할 때 금속 속 전자가 한쪽으로 이동하는 현상을 <b>정전기 유도</b>라고 해요.',
+        '가까운 쪽 끝에 반대 종류의 전하가 모이기 때문에 금속 막대는 끌려와요.',
+        '금속 막대 전체의 전하는 그대로 0이에요. 전자가 들어오거나 나가지 않고 안에서 자리만 옮겨요.',
+      ];
+    }
+    $('#record').innerHTML = lines.map(l => `<li>${l}</li>`).join('');
+  }
+
+  function updatePredict() {
+    const q = charge();
+    $('#predict-q').textContent = `예상해 보기: ${josa(rodName(), '을/를')} 가까이 하면 금속 막대 속 전자는 어느 쪽 끝으로 몰릴까요?`;
+    $('#choices').innerHTML = [['near', '가까운 쪽 끝'], ['far', '먼 쪽 끝']].map(([v, t]) =>
+      `<button type="button" class="btn" data-v="${v}" aria-pressed="${st.predict === v}">${t}</button>`).join('');
+    const v = $('#verdict');
+    v.className = 'verdict';
+    if (!st.predict) { v.textContent = '예상을 고른 다음 막대를 가까이 가져가 보세요.'; return; }
+    if (!st.seen) { v.textContent = '이제 막대를 가까이 가져가서 확인해 보세요.'; return; }
+    const answer = q > 0 ? 'near' : 'far';
+    const why = q > 0 ? '(+)전하가 전자를 끌어당겨서 전자가 가까운 쪽 끝으로 몰려요.' : '(−)전하가 전자를 밀어내서 전자가 먼 쪽 끝으로 몰려요.';
+    if (st.predict === answer) { v.textContent = `예상이 맞았어요. ${why}`; v.classList.add('ok'); }
+    else v.textContent = `예상과 달라요. ${why}`;
+  }
+
+  function buildPickers() {
+    const rodPick = id => {
+      const q = RODS[id].sign * st.level, on = st.rod === id;
+      return `<label class="pick${on ? ' on' : ''}"><input type="radio" name="rod" id="rod-${id}" value="${id}"${on ? ' checked' : ''}>` +
+        `<svg viewBox="-158 -60 316 120" aria-hidden="true">${rodShape(id)}</svg>` +
+        `<span>${q > 0 ? '(+)' : '(−)'}로 대전된 ${RODS[id].name} <em class="${qClass(q)}">${fmtQ(q)}</em></span></label>`;
+    };
+    $('#pickRod .chips').innerHTML = rodPick('glass') + rodPick('plastic');
+    $('#pickLevel .chips').innerHTML = LEVELS.map(l => {
+      const on = st.level === l.v;
+      return `<label class="pick plain${on ? ' on' : ''}"><input type="radio" name="level" id="level-${l.v}" value="${l.v}"${on ? ' checked' : ''}><span>${l.t}</span></label>`;
+    }).join('');
+  }
+
+  function refreshAll() {
+    buildPickers();
+    buildScene();
+    updateHint();
+    updateRecord();
+    updatePredict();
+  }
+
+  function applyLayout() {
+    L = narrowMQ.matches ? LAYOUTS.tall : LAYOUTS.wide;
+    pos.x = L.HOME.x; pos.y = L.HOME.y;
+    pend.th = 0; pend.w = 0;
+    svg.setAttribute('viewBox', `0 0 ${L.W} ${L.H}`);
+    svg.style.aspectRatio = `${L.W} / ${L.H}`;
+  }
+
+  // 이벤트
+  $('#act').addEventListener('click', () => { pos.x = L.HOME.x; pos.y = L.HOME.y; });
+  $('#ledge').addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'rod') { st.rod = t.value; st.predict = null; st.seen = false; }
+    else if (t.name === 'level') st.level = +t.value;
+    else return;
+    refreshAll();
+  });
+  $('#choices').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if (!b) return;
+    st.predict = b.dataset.v;
+    updatePredict();
+  });
+  narrowMQ.addEventListener('change', () => { applyLayout(); ind.s = 0; refreshAll(); });
+
+  applyLayout();
+  ind.bucket = 'far';
+  refreshAll();
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
