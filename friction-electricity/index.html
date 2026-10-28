@@ -28,6 +28,7 @@
   --t-silk:rgba(205,190,150,.3);
   --t-rubber:rgba(226,86,76,.2);
   --t-plastic:rgba(236,190,40,.3);
+  --t-metal:rgba(140,152,170,.32);
 
   --font-display:"Do Hyeon","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
@@ -42,7 +43,7 @@
     --plus:#ff8b80; --minus:#88b7ff; --mark:rgba(255,226,80,.3); --force:#52d2a9;
     --tray:#1a263c; --e-fill:#141f33;
     --t-fur:rgba(200,140,90,.3); --t-glass:rgba(130,200,235,.16); --t-silk:rgba(230,220,190,.18);
-    --t-rubber:rgba(255,120,110,.24); --t-plastic:rgba(245,205,80,.24);
+    --t-rubber:rgba(255,120,110,.24); --t-plastic:rgba(245,205,80,.24); --t-metal:rgba(185,196,212,.2);
     color-scheme:dark;
   }
 }
@@ -52,7 +53,7 @@
   --plus:#ff8b80; --minus:#88b7ff; --mark:rgba(255,226,80,.3); --force:#52d2a9;
   --tray:#1a263c; --e-fill:#141f33;
   --t-fur:rgba(200,140,90,.3); --t-glass:rgba(130,200,235,.16); --t-silk:rgba(230,220,190,.18);
-  --t-rubber:rgba(255,120,110,.24); --t-plastic:rgba(245,205,80,.24);
+  --t-rubber:rgba(255,120,110,.24); --t-plastic:rgba(245,205,80,.24); --t-metal:rgba(185,196,212,.2);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -182,7 +183,7 @@ legend small{font-family:var(--font-body);font-size:.8rem;color:var(--ink-2);mar
 /* 실험 그림 */
 .ln{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .ln-soft{stroke-opacity:.45;stroke-width:2}
-.t-fur{fill:var(--t-fur)} .t-glass{fill:var(--t-glass)} .t-silk{fill:var(--t-silk)} .t-rubber{fill:var(--t-rubber)} .t-plastic{fill:var(--t-plastic)}
+.t-fur{fill:var(--t-fur)} .t-glass{fill:var(--t-glass)} .t-silk{fill:var(--t-silk)} .t-rubber{fill:var(--t-rubber)} .t-plastic{fill:var(--t-plastic)} .t-metal{fill:var(--t-metal)}
 .pp{fill:none;stroke:var(--plus);stroke-width:2.6;stroke-linecap:round}
 .el circle{fill:var(--e-fill);stroke:var(--minus);stroke-width:2.2}
 .el path{fill:none;stroke:var(--minus);stroke-width:2.4;stroke-linecap:round}
@@ -246,6 +247,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
     <nav class="steps" aria-label="실험 단계">
       <button class="step" type="button" data-mode="1" aria-current="step"><span class="n">1</span>문지르기</button>
       <button class="step" type="button" data-mode="2"><span class="n">2</span>가까이 대 보기</button>
+      <button class="step" type="button" data-mode="3"><span class="n">3</span>정전기 유도</button>
     </nav>
     <button class="btn" type="button" id="reset">처음 상태로</button>
   </div>
@@ -310,6 +312,10 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
           <dt>전기력</dt>
           <dd>전기를 띤 물체 사이에 작용하는 힘이에요. 같은 종류의 전하끼리는 밀어내고(척력), 다른 종류의 전하끼리는 끌어당겨요(인력). 거리가 가까울수록 힘이 커요.</dd>
         </div>
+        <div>
+          <dt>정전기 유도</dt>
+          <dd>대전된 물체를 금속에 가까이 하면, 금속 속 전자가 끌려오거나 밀려나 한쪽 끝으로 몰려요. 가까운 쪽에는 가져간 물체와 반대 종류의 전하가, 먼 쪽에는 같은 종류의 전하가 생겨요.</dd>
+        </div>
       </dl>
 
       <h2>생각해 보기</h2>
@@ -343,6 +349,8 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
     silk:    { name:'명주 헝겊',    short:'명주',     rank:2, kind:'cloth',   tint:'t-silk' },
     balloon: { name:'고무풍선',     short:'고무',     rank:3, kind:'balloon', tint:'t-rubber' },
     plastic: { name:'플라스틱 막대', short:'플라스틱', rank:4, kind:'rod',     tint:'t-plastic' },
+    // 3단계 전용 도체. 대전열에는 넣지 않는다
+    metal:   { name:'금속 막대',    short:'금속',     rank:null, kind:'rod',  tint:'t-metal' },
   };
   const ORDER = ['fur','glass','silk','balloon','plastic'];
   const MAX_BY_GAP = [0,2,3,4,5];        // 대전열에서 멀수록 더 많은 전자가 이동
@@ -405,7 +413,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
     switch (m.kind) {
       case 'rod':
         return `<rect class="${m.tint} ln" x="-150" y="-22" width="300" height="44" rx="22"/>` +
-          (id === 'glass' ? `<path class="ln ln-soft" d="M-126 -16H118"/>` : '');
+          (id === 'glass' || id === 'metal' ? `<path class="ln ln-soft" d="M-126 -16H118"/>` : '');
       case 'fur':
         return `<ellipse class="${m.tint} ln" cx="0" cy="0" rx="100" ry="70"/><path class="ln ln-soft" d="${FUR_TUFTS}"/>`;
       case 'cloth':
@@ -429,6 +437,12 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
     return out;
   }
 
+  // 금속 막대: (+)는 제자리에 있고, 자유 전자만 s 방향 끝으로 몰린다 (s: −0.5 ~ 0.5)
+  function metalSVG(sh) {
+    const end = sh > 0 ? 136 : -128, f = Math.abs(sh);
+    return CELLS.rod.pairs.map(c => plusG(c.px, c.py) + elecG(c.ex + (end - c.ex) * f, c.ey)).join('');
+  }
+
   function josa(word, pair) {
     const c = word.charCodeAt(word.length - 1);
     const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0;
@@ -444,6 +458,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
   const st = { mode:1, a:'plastic', b:'fur', moved:0, strokes:0, predict:null, mover:'b', inFlight:0 };
   const pos = { A:{...HOME.A}, B:{...HOME.B}, M:{...HOME.M} };
   const pend = { th:0, w:0 };
+  const ind = { s:0, drawn:'' };      // 3단계 정전기 유도로 전자가 쏠린 정도
   let gen = 0, raf = 0, lastT = 0, drag = null, autoBusy = false;
 
   const giverKey = () => {
@@ -455,6 +470,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
   const charge = key => { const g = giverKey(); return g ? (key === g ? st.moved : -st.moved) : 0; };
   const moverId = () => st.mover === 'b' ? st.b : st.a;
   const moverCharge = () => st.mover === 'b' ? charge('b') : charge('a');
+  const hangId = () => st.mode === 3 ? 'metal' : st.a;
   const moverName = () => st.mover === 'b' ? MATS[st.b].name : `${MATS[st.a].name} 하나 더`;
 
   const svg = $('#stage'), scene = $('#scene'), fx = $('#fx');
@@ -479,7 +495,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
         <line id="thread" class="thread" x1="${PIVOT.x}" y1="${PIVOT.y}" x2="${PIVOT.x}" y2="${PIVOT.y + THREAD}"/>
         <circle class="pivot" cx="${PIVOT.x}" cy="${PIVOT.y}" r="4"/>
         <text id="lA" class="lbl" x="${PIVOT.x - 130}" y="32"></text>
-        <g id="gA"><g>${shapeSVG(st.a)}</g><g class="chg"></g></g>
+        <g id="gA"><g>${shapeSVG(hangId())}</g><g class="chg"></g></g>
         <g id="arrows"></g>
         <g id="gM" class="drag"><g>${shapeSVG(moverId())}</g><g class="chg"></g></g>
         <text id="lM" class="lbl" text-anchor="middle"></text>`;
@@ -498,7 +514,9 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
       $('#lB').innerHTML = `<tspan>${MATS[st.b].name}</tspan>${qSpan(charge('b'))}`;
     } else {
       $('#gM .chg').innerHTML = chargesSVG(moverId(), moverCharge(), 0);
-      $('#lA').innerHTML = `<tspan>매달린 ${MATS[st.a].name}</tspan>${qSpan(charge('a'))}`;
+      if (st.mode === 3) { ga.innerHTML = metalSVG(ind.s); ind.drawn = ind.s.toFixed(3); }
+      const hq = st.mode === 3 ? 0 : charge('a');
+      $('#lA').innerHTML = `<tspan>매달린 ${MATS[hangId()].name}</tspan>${qSpan(hq)}`;
       $('#lM').innerHTML = `<tspan>${moverName()}</tspan>${qSpan(moverCharge())}`;
     }
   }
@@ -597,10 +615,10 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
 
   // 2단계: 실에 매단 물체와 전기력
   function bobGeo(th) {
-    const b = BOX[MATS[st.a].kind];
+    const b = BOX[MATS[hangId()].kind];
     const ax = PIVOT.x + THREAD * Math.sin(th), ay = PIVOT.y + THREAD * Math.cos(th);
     const hh = (b.b - b.t) / 2 * S2, hw = (b.r - b.l) / 2 * S2;
-    return { ax, ay, cx:ax, cy:ay + hh, hw, hh, b, flip:MATS[st.a].kind === 'balloon' };
+    return { ax, ay, cx:ax, cy:ay + hh, hw, hh, b, flip:MATS[hangId()].kind === 'balloon' };
   }
   function moverGeo() {
     const b = BOX[MATS[moverId()].kind];
@@ -652,7 +670,23 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, lastT ? (t - lastT) / 1000 : 0.016);
     lastT = t;
-    const qa = charge('a'), qm = moverCharge();
+    const qm = moverCharge();
+    let qa = charge('a');
+    if (st.mode === 3) {
+      // 정전기 유도: (+)를 가져가면 전자가 가까운 끝으로, (−)를 가져가면 먼 끝으로 몰린다
+      const g = bobGeo(pend.th), m = moverGeo();
+      let target = 0;
+      if (qm) {
+        const gx = Math.max(0, Math.abs(g.cx - m.cx) - (g.hw + m.hw)), gy = Math.max(0, Math.abs(g.cy - m.cy) - (g.hh + m.hh));
+        const d = Math.hypot(gx, gy) + 30;
+        target = Math.min(0.5, Math.abs(qm) * 2500 / (d * d)) * Math.sign((m.cx - g.cx) || 1) * Math.sign(qm);
+      }
+      ind.s += (target - ind.s) * Math.min(1, dt * 6);
+      const key = ind.s.toFixed(3);
+      if (key !== ind.drawn) { ind.drawn = key; $('#gA .chg').innerHTML = metalSVG(ind.s); }
+      // 가까운 쪽에 모인 반대 전하 때문에 언제나 끌려온다
+      qa = -Math.sign(qm) * Math.abs(ind.s) * 2.5;
+    }
     const steps = 6, h = dt / steps;
     let F = { x:0, y:0, mag:0 };
     for (let i = 0; i < steps; i++) {
@@ -721,6 +755,9 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
       else if (st.strokes === 0) h = `${josa(B.name, '을/를')} 끌어서 ${A.name} 위를 쓱쓱 문질러 보세요.`;
       else if (st.moved >= maxMove()) h = '충분히 문질렀어요. 2단계에서 전기력을 관찰해 보세요.';
       else h = '계속 문지르면 전자가 더 옮겨 가요.';
+    } else if (st.mode === 3) {
+      if (!moverCharge()) h = '가까이 가져갈 물체에 전하가 없어요. 1단계에서 먼저 문질러 주세요.';
+      else h = `${josa(moverName(), '을/를')} 금속 막대 가까이 가져가서 전자가 어느 쪽 끝으로 몰리는지 보세요.`;
     } else {
       if (!charge('a')) h = `매달린 ${A.name}에 전하가 없어요. 1단계에서 먼저 문질러 주세요.`;
       else h = `${josa(moverName(), '을/를')} 끌어서 매달린 ${A.name} 가까이 가져가 보세요.`;
@@ -755,6 +792,25 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
           `두 물체의 전하를 더하면 (+${st.moved}) + (−${st.moved}) = 0이에요. 전하는 새로 생기지 않고 옮겨 갈 뿐이에요.`,
         ];
         if (st.moved >= maxMove()) lines.push(`이 실험에서는 전자 ${maxMove()}개까지 보여 줘요. 대전열에서 멀리 떨어진 물체끼리 문지를수록 더 많은 전자가 옮겨 가요.`);
+      }
+    } else if (st.mode === 3) {
+      const qm = moverCharge();
+      if (!qm) {
+        lines = [
+          '가까이 가져갈 물체에 전하가 없어서 금속 막대 속 전자가 움직이지 않아요.',
+          '1단계에서 서로 다른 두 물체를 문질러 전기를 띠게 해 주세요.',
+        ];
+      } else {
+        lines = [
+          `가져간 ${moverName()} <span class="${qClass(qm)}">${fmtQ(qm)}</span>, 매달린 금속 막대 <span class="q0">중성</span>`,
+          qm > 0
+            ? '금속 속 전자가 (+)전하에 끌려 <b>가까운 쪽 끝</b>으로 몰려요. 먼 쪽 끝에는 (+)전하가 남아요.'
+            : '금속 속 전자가 (−)전하에 밀려 <b>먼 쪽 끝</b>으로 몰려요. 가까운 쪽 끝에는 (+)전하가 남아요.',
+          '대전된 물체를 가까이 할 때 금속 속 전자가 한쪽으로 이동하는 현상을 <b>정전기 유도</b>라고 해요.',
+          '가까운 쪽 끝에 반대 종류의 전하가 모이기 때문에, 금속 막대는 어떤 전하를 가져가도 끌려와요.',
+          '금속 막대 전체의 전하는 그대로 0이에요. 전자가 들어오거나 나가지 않고 안에서 자리만 옮겨요. 멀리 떨어뜨리면 전자가 다시 고르게 퍼져요.',
+          '플라스틱 같은 절연체는 전자가 자유롭게 움직이지 못해서, 2단계에서는 전자가 한쪽으로 몰리지 않았어요.',
+        ];
       }
     } else {
       const qa = charge('a'), qm = moverCharge();
@@ -813,7 +869,7 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
       pick('mover', st.b, { v:'b', t:`${MATS[st.b].name} <em class="${qClass(qb)}">${qb ? fmtQ(qb) : '중성'}</em>` }, st.mover === 'b') +
       pick('mover', st.a, { v:'twin', t:`같은 방법으로 문지른 ${MATS[st.a].name} <em class="${qClass(qa)}">${qa ? fmtQ(qa) : '중성'}</em>` }, st.mover === 'twin');
     $('#pickA').hidden = $('#pickB').hidden = st.mode !== 1;
-    $('#pickM').hidden = st.mode !== 2;
+    $('#pickM').hidden = st.mode === 1;
   }
 
   function refresh() {
@@ -838,11 +894,11 @@ details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--line)}
       if (+b.dataset.mode === mode) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
     });
     pos.B = { ...HOME.B }; pos.M = { ...HOME.M };
-    pend.th = 0; pend.w = 0;
+    pend.th = 0; pend.w = 0; ind.s = 0; ind.drawn = '';
     buildPickers();
     buildScene();
     refresh();
-    if (mode === 2) startLoop(); else stopLoop();
+    if (mode >= 2) startLoop(); else stopLoop();
   }
 
   // 이벤트
