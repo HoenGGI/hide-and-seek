@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마찰 전기 실험실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: 교실 녹색 칠판 한 장이 화면의 중심. 칠판 위쪽에 대전열을 분필로 적고, 아래 나무 분필 받침대에 실험 물체를 올려 둔다. 칠판 밑에는 관찰 기록과 개념 정리를 왼쪽 정렬로 적는다. */
+:root{
+  --wall:#1c2924;        /* 칠판 바깥 교실 벽 */
+  --board:#2f4b3e;       /* 녹색 칠판 */
+  --chalk:#eef0e4;       /* 흰 분필 */
+  --chalk-dim:#a8b7a9;   /* 지워진 분필 */
+  --plus:#ff9e8c;        /* 빨간 분필: (+) */
+  --minus:#8fcbff;       /* 파란 분필: (−) */
+  --yellow:#f3d978;      /* 노란 분필: 안내와 강조 */
+  --wood:#8a5c38;
+  --wood-dark:#5c3a20;
+  --wood-light:#a5734a;
+
+  --smudge:rgba(238,240,228,.045);
+  --chalk-line:rgba(238,240,228,.5);
+  --chalk-faint:rgba(238,240,228,.08);
+  --shade:rgba(0,0,0,.32);
+  --e-fill:rgba(28,48,40,.75);
+  --t-fur:rgba(201,146,96,.4);
+  --t-glass:rgba(180,228,240,.16);
+  --t-silk:rgba(244,238,214,.2);
+  --t-rubber:rgba(255,128,112,.34);
+  --t-plastic:rgba(243,217,120,.28);
+
+  --font-chalk:"Gaegu","Nanum Pen Script","Comic Sans MS",cursive;
+  --font-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+
+  color-scheme:dark;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--wall);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--wall);
+  color:var(--chalk);
+  font-family:var(--font-body);
+  font-size:1.0625rem;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:1080px;
+  margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:28px 56px;
+  display:grid;
+  gap:22px;
+}
+
+/* 머리말 */
+.top{display:grid;gap:6px;max-width:62ch}
+h1{
+  margin:0;
+  font-family:var(--font-chalk);
+  font-weight:700;
+  font-size:clamp(2.3rem, 6vw, 3.4rem);
+  line-height:1.05;
+  letter-spacing:-.01em;
+  text-wrap:balance;
+}
+.lede{margin:0;color:var(--chalk-dim)}
+.unit{margin:0;color:var(--chalk-dim);font-size:.875rem}
+
+/* 단계 전환 */
+.bar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.steps{display:flex;flex-wrap:wrap;gap:4px 22px}
+.step{
+  appearance:none;background:none;border:0;padding:2px 0 4px;cursor:pointer;
+  font-family:var(--font-chalk);font-weight:700;font-size:1.6rem;line-height:1.2;
+  color:var(--chalk-dim);
+  border-bottom:3px solid transparent;
+}
+.step:hover{color:var(--chalk)}
+.step[aria-current="step"]{color:var(--chalk);border-bottom-color:var(--yellow)}
+.step .n{
+  display:inline-grid;place-items:center;width:1.25em;height:1.25em;margin-right:.3em;
+  border:2px solid currentColor;border-radius:50%;font-size:.8em;
+}
+.btn{
+  appearance:none;cursor:pointer;
+  font:inherit;font-size:.95rem;color:var(--chalk);
+  background:transparent;border:2px solid var(--chalk-line);border-radius:10px;
+  padding:7px 14px;line-height:1.3;
+}
+.btn:hover{background:var(--chalk-faint)}
+.step:focus-visible,.btn:focus-visible,.pick:focus-visible,summary:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+
+/* 칠판 */
+.board{
+  position:relative;
+  border:12px solid var(--wood);
+  border-bottom:0;
+  border-radius:8px 8px 0 0;
+  padding:16px 20px 14px;
+  background:
+    radial-gradient(ellipse 36% 24% at 20% 34%, var(--smudge), transparent 70%),
+    radial-gradient(ellipse 30% 20% at 76% 66%, var(--smudge), transparent 70%),
+    radial-gradient(ellipse 46% 26% at 56% 12%, var(--smudge), transparent 70%),
+    var(--board);
+  box-shadow:inset 0 0 70px var(--shade);
+  display:grid;
+  gap:6px;
+}
+.series{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-family:var(--font-chalk);font-size:1.45rem;line-height:1.3}
+.series ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.series li{display:inline-flex;align-items:center;gap:4px;color:var(--chalk)}
+.series li+li::before{content:"";width:16px;height:2px;margin-right:6px;background:var(--chalk-line);border-radius:2px}
+.series li.on{color:var(--yellow);font-weight:700}
+.series .tag{font-family:var(--font-body);font-size:.75rem;font-weight:400;line-height:1;color:var(--yellow);border:1.5px solid var(--yellow);border-radius:6px;padding:2px 4px}
+.series .tag:empty{display:none}
+.series li.end{font-weight:700}
+.series li.end::before,.series li.end+li::before{display:none}
+.qp{color:var(--plus)}
+.qm{color:var(--minus)}
+.series-note{margin:0;color:var(--chalk-dim);font-size:.875rem}
+.series-note b{color:var(--chalk);font-weight:400}
+
+#stage{display:block;width:100%;height:auto;aspect-ratio:2/1;max-width:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+.board-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.hint{margin:0;font-family:var(--font-chalk);font-weight:700;font-size:1.4rem;line-height:1.3;color:var(--yellow);min-width:0;flex:1 1 280px}
+
+/* 분필 받침대 */
+.ledge{
+  background:linear-gradient(var(--wood-light), var(--wood) 22%, var(--wood-dark));
+  border-radius:0 0 8px 8px;
+  padding:14px 18px 16px;
+  box-shadow:0 6px 0 var(--shade);
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap:12px 24px;
+}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:6px;font-family:var(--font-chalk);font-weight:700;font-size:1.3rem;line-height:1.2}
+legend small{font-family:var(--font-body);font-weight:400;font-size:.8rem;color:var(--chalk-dim);margin-left:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.pick{
+  position:relative;display:inline-flex;align-items:center;gap:8px;
+  padding:5px 12px 5px 8px;border-radius:10px;
+  background:var(--wood-dark);border:2px solid transparent;
+  color:var(--chalk);font-size:.95rem;line-height:1.3;cursor:pointer;
+}
+.pick:hover{border-color:var(--chalk-line)}
+.pick.on{border-color:var(--yellow)}
+.pick input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.pick:has(input:focus-visible){outline:3px solid var(--yellow);outline-offset:2px}
+.pick svg{width:40px;height:24px;flex:none}
+.pick svg .ln{stroke-width:1.4px;vector-effect:non-scaling-stroke}
+.pick em{font-style:normal;font-weight:700}
+
+/* SVG 칠판 그림 */
+.ln{fill:none;stroke:var(--chalk);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ln-soft{stroke-opacity:.5;stroke-width:2.2}
+.t-fur{fill:var(--t-fur)} .t-glass{fill:var(--t-glass)} .t-silk{fill:var(--t-silk)} .t-rubber{fill:var(--t-rubber)} .t-plastic{fill:var(--t-plastic)}
+.chalky{filter:url(#chalk)}
+.pp{fill:none;stroke:var(--plus);stroke-width:3;stroke-linecap:round}
+.el circle{fill:var(--e-fill);stroke:var(--minus);stroke-width:2.5}
+.el path{fill:none;stroke:var(--minus);stroke-width:2.5;stroke-linecap:round}
+.lbl{font-family:var(--font-chalk);font-weight:700;font-size:28px;fill:var(--chalk)}
+.lbl .qp{fill:var(--plus)} .lbl .qm{fill:var(--minus)} .lbl .q0{fill:var(--chalk-dim);font-weight:400}
+.drag{cursor:grab}
+.drag.is-dragging{cursor:grabbing}
+.thread{stroke:var(--chalk);stroke-width:1.8;stroke-opacity:.85}
+.pivot{fill:var(--chalk)}
+.arw{fill:none;stroke:var(--yellow);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.arw-t{font-family:var(--font-chalk);font-weight:700;font-size:28px;fill:var(--yellow)}
+.swish{font-family:var(--font-chalk);font-weight:700;font-size:26px;fill:var(--chalk-dim);animation:swish .7s ease-out forwards}
+@keyframes swish{from{opacity:.95;transform:translateY(0)}to{opacity:0;transform:translateY(-18px)}}
+
+/* 관찰 기록과 개념 정리 */
+.notes{display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 380px), 1fr));gap:28px 48px;margin-top:10px}
+.notes section{min-width:0;display:grid;gap:10px;align-content:start}
+.notes h2{margin:0;font-family:var(--font-chalk);font-weight:700;font-size:1.75rem;line-height:1.2}
+.notes p{margin:0}
+.record{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-width:60ch}
+.record li{padding-left:16px;position:relative}
+.record li::before{content:"";position:absolute;left:0;top:.75em;width:7px;height:2px;background:var(--chalk-dim)}
+.record b{font-weight:400;color:var(--yellow)}
+.predict{display:grid;gap:10px;padding-top:14px;border-top:2px dashed var(--chalk-faint)}
+.predict h3{margin:0;font-size:1rem;font-weight:400}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choices .btn[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow)}
+.verdict{color:var(--chalk-dim);min-height:1.65em}
+.verdict.ok{color:var(--yellow)}
+dl{margin:0;display:grid;gap:12px;max-width:62ch}
+dt{font-family:var(--font-chalk);font-weight:700;font-size:1.35rem;line-height:1.2;color:var(--yellow)}
+dd{margin:2px 0 0}
+.quiz{margin:0;padding-left:1.4em;display:grid;gap:10px;max-width:62ch}
+.quiz li::marker{font-family:var(--font-chalk);font-weight:700;color:var(--chalk-dim)}
+details summary{cursor:pointer;color:var(--chalk-dim);font-size:.9rem;width:fit-content}
+details summary:hover{color:var(--chalk)}
+details p{margin-top:4px;padding-left:12px;border-left:2px solid var(--chalk-line)}
+.fine{margin:0;color:var(--chalk-dim);font-size:.8125rem;max-width:70ch}
+
+@media (max-width:560px){
+  .board{border-width:8px;border-bottom:0;padding:12px 10px 10px}
+  .ledge{padding:12px}
+  .series{font-size:1.2rem}
+  .hint{font-size:1.2rem}
+  .step{font-size:1.35rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .swish{animation:none;opacity:0}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <h1>마찰 전기 실험실</h1>
+    <p class="lede">두 물체를 골라 문질러 보세요. 전자가 어느 쪽으로 옮겨 가는지, 전기를 띤 물체끼리 어떤 힘을 주고받는지 칠판 위에서 확인할 수 있어요.</p>
+    <p class="unit">중학교 2학년 과학, 전기와 자기 단원</p>
+  </header>
+
+  <div class="bar">
+    <nav class="steps" aria-label="실험 단계">
+      <button class="step" type="button" data-mode="1" aria-current="step"><span class="n">1</span>문지르기</button>
+      <button class="step" type="button" data-mode="2"><span class="n">2</span>가까이 대 보기</button>
+    </nav>
+    <button class="btn" type="button" id="reset">처음 상태로</button>
+  </div>
+
+  <div>
+    <div class="board">
+      <div class="series" aria-label="대전열">
+        <ol id="series"></ol>
+      </div>
+      <p class="series-note"><b>대전열</b> 왼쪽일수록 전자를 잃기 쉽고, 오른쪽일수록 전자를 얻기 쉬워요.</p>
+
+      <svg id="stage" viewBox="0 0 800 400" role="img" aria-label="마찰 전기 실험 칠판. 물체를 끌어서 움직일 수 있어요.">
+        <defs>
+          <filter id="chalk" x="-6%" y="-6%" width="112%" height="112%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="4" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </defs>
+        <g id="scene"></g>
+        <g id="fx"></g>
+      </svg>
+
+      <div class="board-foot">
+        <p class="hint" id="hint"></p>
+        <button class="btn" type="button" id="act">한 번 문지르기</button>
+      </div>
+    </div>
+
+    <div class="ledge" id="ledge">
+      <fieldset id="pickA">
+        <legend>물체 A<small>가만히 두는 물체</small></legend>
+        <div class="chips"></div>
+      </fieldset>
+      <fieldset id="pickB">
+        <legend>물체 B<small>끌어서 문지르는 물체</small></legend>
+        <div class="chips"></div>
+      </fieldset>
+      <fieldset id="pickM" hidden>
+        <legend>가까이 가져갈 물체</legend>
+        <div class="chips"></div>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="notes">
+    <section aria-labelledby="rec-h">
+      <h2 id="rec-h">관찰 기록</h2>
+      <ul class="record" id="record" aria-live="polite"></ul>
+      <div class="predict" id="predict">
+        <h3>예상해 보기: 문지르면 어느 물체가 전자를 얻을까요?</h3>
+        <div class="choices" id="choices"></div>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section aria-labelledby="sum-h">
+      <h2 id="sum-h">개념 정리</h2>
+      <dl>
+        <div>
+          <dt>마찰 전기</dt>
+          <dd>서로 다른 두 물체를 문지를 때 전자가 한 물체에서 다른 물체로 옮겨 가면서 생기는 전기예요.</dd>
+        </div>
+        <div>
+          <dt>대전</dt>
+          <dd>물체가 전기를 띠는 현상이에요. 전자를 잃은 물체는 (+)전하를, 전자를 얻은 물체는 (−)전하를 띠어요. 원자핵은 움직이지 않고 전자만 이동해요.</dd>
+        </div>
+        <div>
+          <dt>전기력</dt>
+          <dd>전기를 띤 물체 사이에 작용하는 힘이에요. 같은 종류의 전하끼리는 밀어내고(척력), 다른 종류의 전하끼리는 끌어당겨요(인력). 거리가 가까울수록 힘이 커요.</dd>
+        </div>
+      </dl>
+
+      <h2>생각해 보기</h2>
+      <ol class="quiz">
+        <li>털가죽으로 유리 막대를 문지르면 유리 막대는 어떤 전하를 띨까요?
+          <details><summary>답 보기</summary><p>(−)전하를 띠어요. 대전열에서 유리가 털가죽보다 오른쪽에 있어서 전자를 얻어요.</p></details>
+        </li>
+        <li>이번에는 명주 헝겊으로 유리 막대를 문지르면 유리 막대는 어떤 전하를 띨까요?
+          <details><summary>답 보기</summary><p>(+)전하를 띠어요. 명주가 유리보다 오른쪽에 있어서 이번에는 유리 막대가 전자를 잃어요. 같은 물체라도 무엇과 문지르는지에 따라 띠는 전하가 달라져요.</p></details>
+        </li>
+        <li>털가죽으로 문지른 고무풍선 두 개를 실에 매달아 가까이 하면 어떻게 될까요?
+          <details><summary>답 보기</summary><p>두 풍선 모두 전자를 얻어 (−)전하를 띠므로 서로 밀어내요(척력). 2단계에서 물체 A를 고무풍선, 물체 B를 털가죽으로 정하고 확인해 보세요.</p></details>
+        </li>
+      </ol>
+      <p class="fine">대전열 순서는 교과서와 자료마다 조금씩 다를 수 있어요. 이 시뮬레이터는 전자 이동을 눈으로 보기 쉽도록 전자 수를 줄여서 단순하게 나타냈어요.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  document.documentElement.lang = 'ko';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = s => document.querySelector(s);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 대전열: rank가 작을수록 전자를 잃기 쉽다
+  const MATS = {
+    fur:     { name:'털가죽',       short:'털가죽',   rank:0, kind:'fur',     tint:'t-fur' },
+    glass:   { name:'유리 막대',    short:'유리',     rank:1, kind:'rod',     tint:'t-glass' },
+    silk:    { name:'명주 헝겊',    short:'명주',     rank:2, kind:'cloth',   tint:'t-silk' },
+    balloon: { name:'고무풍선',     short:'고무',     rank:3, kind:'balloon', tint:'t-rubber' },
+    plastic: { name:'플라스틱 막대', short:'플라스틱', rank:4, kind:'rod',     tint:'t-plastic' },
+  };
+  const ORDER = ['fur','glass','silk','balloon','plastic'];
+  const MAX_BY_GAP = [0,2,3,4,5];        // 대전열에서 멀수록 더 많은 전자가 이동
+  const BOX = {
+    rod:     { l:-150, r:150, t:-22, b:22 },
+    fur:     { l:-112, r:112, t:-82, b:82 },
+    cloth:   { l:-102, r:102, t:-68, b:68 },
+    balloon: { l:-72,  r:72,  t:-94, b:112 },
+  };
+  const THREAD = 170, S2 = 0.8, KF = 7600, MAX_TH = 0.8;
+  // 넓은 화면은 가로 칠판, 휴대폰은 세로 칠판
+  const LAYOUTS = {
+    wide: { W:800, H:400, PIVOT:{x:280,y:52}, HOME:{ A:{x:250,y:186}, B:{x:590,y:200}, M:{x:640,y:250} } },
+    tall: { W:480, H:540, PIVOT:{x:210,y:52}, HOME:{ A:{x:240,y:150}, B:{x:240,y:410}, M:{x:320,y:430} } },
+  };
+  const narrowMQ = matchMedia('(max-width: 600px)');
+  let L = narrowMQ.matches ? LAYOUTS.tall : LAYOUTS.wide;
+  let PIVOT = L.PIVOT, HOME = L.HOME;
+
+  // 각 물체 안에 (+)와 (−) 한 쌍이 놓이는 자리 8개, 얻은 전자가 들어갈 빈자리 5개 이상
+  const CELLS = {};
+  for (const kind of Object.keys(BOX)) {
+    const cells = [];
+    if (kind === 'rod') {
+      const extra = new Set([1,4,6,8,11]);
+      for (let i = 0; i < 13; i++) cells.push({ x:-132 + 22*i, y:0, extra:extra.has(i) });
+    } else {
+      const cols = kind === 'balloon' ? [-32,0,32] : [-64,-32,0,32,64];
+      const rows = kind === 'balloon' ? [-74,-42,-10,22,54] : [-34,0,34];
+      rows.forEach((y, ri) => cols.forEach((x, ci) => cells.push({ x, y, extra:(ri+ci) % 2 === 1 })));
+    }
+    const cy = kind === 'balloon' ? -10 : 0;
+    const d = c => Math.hypot(c.x, c.y - cy);
+    const rod = kind === 'rod';
+    CELLS[kind] = {
+      pairs: cells.filter(c => !c.extra).sort((a, b) => d(b) - d(a)).map(c => ({
+        px: rod ? c.x - 4 : c.x - 6, py: rod ? -9 : c.y - 6,
+        ex: rod ? c.x + 4 : c.x + 6, ey: rod ? 9 : c.y + 6,
+      })),
+      extras: cells.filter(c => c.extra).sort((a, b) => d(a) - d(b)),
+    };
+  }
+
+  const FUR_TUFTS = (() => {
+    let d = '';
+    const n = 40;
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, x = 100 * Math.cos(a), y = 70 * Math.sin(a);
+      let ux = Math.cos(a) / 100, uy = Math.sin(a) / 70;
+      const l = Math.hypot(ux, uy); ux /= l; uy /= l;
+      const L = 8 + (i * 7 % 5) * 1.6, tl = .4;
+      const tx = ux * Math.cos(tl) - uy * Math.sin(tl), ty = ux * Math.sin(tl) + uy * Math.cos(tl);
+      d += `M${x.toFixed(1)} ${y.toFixed(1)}l${(tx*L).toFixed(1)} ${(ty*L).toFixed(1)}`;
+    }
+    return d;
+  })();
+
+  function shapeSVG(id) {
+    const m = MATS[id];
+    switch (m.kind) {
+      case 'rod':
+        return `<rect class="${m.tint} ln" x="-150" y="-22" width="300" height="44" rx="22"/>` +
+          (id === 'glass' ? `<path class="ln ln-soft" d="M-126 -16H118"/>` : '');
+      case 'fur':
+        return `<ellipse class="${m.tint} ln" cx="0" cy="0" rx="100" ry="70"/><path class="ln ln-soft" d="${FUR_TUFTS}"/>`;
+      case 'cloth':
+        return `<path class="${m.tint} ln" d="M-100 -60Q-75 -70 -50 -60T0 -60T50 -60T100 -60L100 60Q75 70 50 60T0 60T-50 60T-100 60Z"/>` +
+          `<path class="ln ln-soft" d="M-86 -56Q-80 0 -90 56M86 -56Q94 0 84 56"/>`;
+      case 'balloon':
+        return `<ellipse class="${m.tint} ln" cx="0" cy="-10" rx="72" ry="84"/><path class="${m.tint} ln" d="M-8 84L8 84L0 73Z"/>` +
+          `<path class="ln ln-soft" d="M0 84q10 7 0 14q-10 7 0 14"/><path class="ln ln-soft" d="M-48 -54q10 -22 32 -28"/>`;
+    }
+  }
+
+  const plusG = (x, y) => `<path class="pp" d="M${x-5} ${y}h10M${x} ${y-5}v10"/>`;
+  const elecG = (x, y, hide) => `<g class="el"${hide ? ' opacity="0"' : ''}><circle cx="${x}" cy="${y}" r="6.5"/><path d="M${x-3.5} ${y}h7"/></g>`;
+
+  function chargesSVG(id, q, hideLast) {
+    const { pairs, extras } = CELLS[MATS[id].kind];
+    const lost = Math.max(0, q), gained = Math.max(0, -q);
+    let out = '';
+    pairs.forEach((c, i) => { out += plusG(c.px, c.py); if (i >= lost) out += elecG(c.ex, c.ey); });
+    for (let i = 0; i < gained; i++) out += elecG(extras[i].x, extras[i].y, i >= gained - hideLast);
+    return out;
+  }
+
+  function josa(word, pair) {
+    const c = word.charCodeAt(word.length - 1);
+    const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0;
+    const [a, b] = pair.split('/');
+    return word + (has ? a : b);
+  }
+  const fmtQ = q => q > 0 ? `+${q}` : q < 0 ? `−${-q}` : '0';
+  const qClass = q => q > 0 ? 'qp' : q < 0 ? 'qm' : 'q0';
+  const qSpan = q => `<tspan class="${qClass(q)}" dx="12">${q ? fmtQ(q) : '중성'}</tspan>`;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // 상태
+  const st = { mode:1, a:'plastic', b:'fur', moved:0, strokes:0, predict:null, mover:'b', inFlight:0 };
+  const pos = { A:{...HOME.A}, B:{...HOME.B}, M:{...HOME.M} };
+  const pend = { th:0, w:0 };
+  let gen = 0, raf = 0, lastT = 0, drag = null, autoBusy = false;
+
+  const giverKey = () => {
+    const ra = MATS[st.a].rank, rb = MATS[st.b].rank;
+    return ra === rb ? null : (ra < rb ? 'a' : 'b');
+  };
+  const receiverKey = () => { const g = giverKey(); return g ? (g === 'a' ? 'b' : 'a') : null; };
+  const maxMove = () => MAX_BY_GAP[Math.abs(MATS[st.a].rank - MATS[st.b].rank)];
+  const charge = key => { const g = giverKey(); return g ? (key === g ? st.moved : -st.moved) : 0; };
+  const moverId = () => st.mover === 'b' ? st.b : st.a;
+  const moverCharge = () => st.mover === 'b' ? charge('b') : charge('a');
+  const moverName = () => st.mover === 'b' ? MATS[st.b].name : `${MATS[st.a].name} 하나 더`;
+
+  const svg = $('#stage'), scene = $('#scene'), fx = $('#fx');
+  function svgPt(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  // 칠판 그리기
+  function buildScene() {
+    fx.innerHTML = '';
+    if (st.mode === 1) {
+      scene.innerHTML = `
+        <g id="gA" class="chalky"><g>${shapeSVG(st.a)}</g><g class="chg"></g></g>
+        <text id="lA" class="lbl chalky" text-anchor="middle"></text>
+        <g id="gB" class="chalky drag"><g>${shapeSVG(st.b)}</g><g class="chg"></g></g>
+        <text id="lB" class="lbl chalky" text-anchor="middle"></text>`;
+    } else {
+      const post = PIVOT.x - 120, foot = L.H - 8;
+      scene.innerHTML = `
+        <path class="ln chalky" d="M${post - 50} ${foot}H${post + 70}M${post} ${foot}V${PIVOT.y}H${PIVOT.x + 22}"/>
+        <line id="thread" class="thread" x1="${PIVOT.x}" y1="${PIVOT.y}" x2="${PIVOT.x}" y2="${PIVOT.y + THREAD}"/>
+        <circle class="pivot" cx="${PIVOT.x}" cy="${PIVOT.y}" r="4"/>
+        <text id="lA" class="lbl chalky" x="${PIVOT.x - 130}" y="32"></text>
+        <g id="gA" class="chalky"><g>${shapeSVG(st.a)}</g><g class="chg"></g></g>
+        <g id="arrows"></g>
+        <g id="gM" class="chalky drag"><g>${shapeSVG(moverId())}</g><g class="chg"></g></g>
+        <text id="lM" class="lbl chalky" text-anchor="middle"></text>`;
+    }
+    updateCharges();
+    updatePositions();
+  }
+
+  function updateCharges() {
+    const rk = receiverKey();
+    const ga = $('#gA .chg');
+    if (ga) ga.innerHTML = chargesSVG(st.a, charge('a'), st.mode === 1 && rk === 'a' ? st.inFlight : 0);
+    if (st.mode === 1) {
+      $('#gB .chg').innerHTML = chargesSVG(st.b, charge('b'), rk === 'b' ? st.inFlight : 0);
+      $('#lA').innerHTML = `<tspan>${MATS[st.a].name}</tspan>${qSpan(charge('a'))}`;
+      $('#lB').innerHTML = `<tspan>${MATS[st.b].name}</tspan>${qSpan(charge('b'))}`;
+    } else {
+      $('#gM .chg').innerHTML = chargesSVG(moverId(), moverCharge(), 0);
+      $('#lA').innerHTML = `<tspan>매달린 ${MATS[st.a].name}</tspan>${qSpan(charge('a'))}`;
+      $('#lM').innerHTML = `<tspan>${moverName()}</tspan>${qSpan(moverCharge())}`;
+    }
+  }
+
+  function setAttr(el, name, val) { if (el && el.getAttribute(name) !== val) el.setAttribute(name, val); }
+
+  function updatePositions() {
+    if (st.mode === 1) {
+      const bA = BOX[MATS[st.a].kind], bB = BOX[MATS[st.b].kind];
+      setAttr($('#gA'), 'transform', `translate(${pos.A.x} ${pos.A.y})`);
+      setAttr($('#gB'), 'transform', `translate(${pos.B.x.toFixed(1)} ${pos.B.y.toFixed(1)})`);
+      setAttr($('#lA'), 'x', pos.A.x); setAttr($('#lA'), 'y', pos.A.y + bA.b + 40);
+      setAttr($('#lB'), 'x', pos.B.x.toFixed(1)); setAttr($('#lB'), 'y', (pos.B.y + bB.t - 18).toFixed(1));
+    } else {
+      drawMode2({ x:0, y:0, mag:0 });
+    }
+  }
+
+  // 1단계: 문지르기
+  function boxWorld(id, p, s = 1) {
+    const b = BOX[MATS[id].kind];
+    return { l:p.x + b.l*s, r:p.x + b.r*s, t:p.y + b.t*s, b:p.y + b.b*s };
+  }
+  function overlap() {
+    const A = boxWorld(st.a, pos.A), B = boxWorld(st.b, pos.B);
+    if (A.l < B.r - 12 && B.l < A.r - 12 && A.t < B.b - 8 && B.t < A.b - 8) {
+      return { x:(Math.max(A.l, B.l) + Math.min(A.r, B.r)) / 2, y:Math.max(A.t, B.t) - 12 };
+    }
+    return null;
+  }
+
+  function stroke(pt) {
+    st.strokes++;
+    const g = giverKey();
+    if (g && st.moved < maxMove()) { st.moved++; flyElectron(g); }
+    if (pt && !reduce) swish(pt);
+    refresh();
+  }
+
+  function swish(pt) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('class', 'swish'); t.setAttribute('x', pt.x.toFixed(0)); t.setAttribute('y', pt.y.toFixed(0));
+    t.setAttribute('text-anchor', 'middle'); t.textContent = '쓱쓱';
+    fx.appendChild(t);
+    setTimeout(() => t.remove(), 750);
+  }
+
+  function flyElectron(g) {
+    if (reduce) return;
+    const r = g === 'a' ? 'b' : 'a';
+    const idx = st.moved - 1;
+    const sp = CELLS[MATS[st[g]].kind].pairs[idx], ep = CELLS[MATS[st[r]].kind].extras[idx];
+    const gP = pos[g.toUpperCase()], rP = pos[r.toUpperCase()];
+    const start = { x:gP.x + sp.ex, y:gP.y + sp.ey };
+    const my = gen;
+    st.inFlight++;
+    const el = document.createElementNS(NS, 'g');
+    el.setAttribute('class', 'el');
+    el.innerHTML = '<circle r="7.5"/><path d="M-4 0h8"/>';
+    fx.appendChild(el);
+    const t0 = performance.now(), dur = 460;
+    const step = now => {
+      if (my !== gen) { el.remove(); return; }
+      const k = Math.min(1, (now - t0) / dur);
+      const e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+      const end = { x:rP.x + ep.x, y:rP.y + ep.y };
+      const cx = (start.x + end.x) / 2, cy = Math.min(start.y, end.y) - 46;
+      const x = (1-e)*(1-e)*start.x + 2*(1-e)*e*cx + e*e*end.x;
+      const y = (1-e)*(1-e)*start.y + 2*(1-e)*e*cy + e*e*end.y;
+      el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      if (k < 1) requestAnimationFrame(step);
+      else { el.remove(); st.inFlight--; updateCharges(); }
+    };
+    requestAnimationFrame(step);
+  }
+
+  function animate(dur, fn, done) {
+    const t0 = performance.now();
+    const s = now => { const k = Math.min(1, (now - t0) / dur); fn(k); if (k < 1) requestAnimationFrame(s); else if (done) done(); };
+    requestAnimationFrame(s);
+  }
+  const ease = k => k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+
+  function autoRub() {
+    if (autoBusy) return;
+    autoBusy = true;
+    const sx = pos.B.x, sy = pos.B.y, tx = pos.A.x + 30, ty = pos.A.y;
+    const near = Math.hypot(sx - tx, sy - ty) < 60;
+    animate(reduce ? 1 : (near ? 360 : 640), k => {
+      const split = near ? 0 : .45;
+      if (k < split) { const e = ease(k / split); pos.B.x = sx + (tx - sx)*e; pos.B.y = sy + (ty - sy)*e; }
+      else { const e = (k - split) / (1 - split); pos.B.x = tx + Math.sin(e * Math.PI * 2) * 44; pos.B.y = ty; }
+      updatePositions();
+    }, () => { pos.B.x = tx; pos.B.y = ty; updatePositions(); autoBusy = false; stroke(overlap()); });
+  }
+
+  // 2단계: 실에 매단 물체와 전기력
+  function bobGeo(th) {
+    const b = BOX[MATS[st.a].kind];
+    const ax = PIVOT.x + THREAD * Math.sin(th), ay = PIVOT.y + THREAD * Math.cos(th);
+    const hh = (b.b - b.t) / 2 * S2, hw = (b.r - b.l) / 2 * S2;
+    return { ax, ay, cx:ax, cy:ay + hh, hw, hh, b, flip:MATS[st.a].kind === 'balloon' };
+  }
+  function moverGeo() {
+    const b = BOX[MATS[moverId()].kind];
+    return { cx:pos.M.x + (b.l + b.r) / 2 * S2, cy:pos.M.y + (b.t + b.b) / 2 * S2, hw:(b.r - b.l) / 2 * S2, hh:(b.b - b.t) / 2 * S2, b };
+  }
+  function elecForce(g, qa, qm) {
+    if (!qa || !qm) return { x:0, y:0, mag:0 };
+    const m = moverGeo();
+    const dx = g.cx - m.cx, dy = g.cy - m.cy, len = Math.hypot(dx, dy) || 1;
+    const gx = Math.max(0, Math.abs(dx) - (g.hw + m.hw)), gy = Math.max(0, Math.abs(dy) - (g.hh + m.hh));
+    const d = Math.hypot(gx, gy) + 30;
+    const mag = KF * qa * qm / (d * d);    // 양수면 밀어냄
+    return { x:mag * dx / len, y:mag * dy / len, mag };
+  }
+
+  function arrow(x, y, ux, uy, L) {
+    const x2 = x + ux*L, y2 = y + uy*L, h = 12;
+    const lx = x2 - ux*h - uy*h*.6, ly = y2 - uy*h + ux*h*.6;
+    const rx = x2 - ux*h + uy*h*.6, ry = y2 - uy*h - ux*h*.6;
+    return `M${x.toFixed(1)} ${y.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}M${lx.toFixed(1)} ${ly.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}L${rx.toFixed(1)} ${ry.toFixed(1)}`;
+  }
+
+  function drawMode2(F) {
+    // 실에 매달린 물체는 기울지 않고 실 끝을 따라 옮겨 간다
+    const g = bobGeo(pend.th);
+    const inner = g.flip ? `rotate(180) translate(0 ${-g.b.b})` : `translate(0 ${-g.b.t})`;
+    setAttr($('#gA'), 'transform', `translate(${g.ax.toFixed(1)} ${g.ay.toFixed(1)}) scale(${S2}) ${inner}`);
+    setAttr($('#thread'), 'x2', g.ax.toFixed(1)); setAttr($('#thread'), 'y2', g.ay.toFixed(1));
+    const m = moverGeo();
+    setAttr($('#gM'), 'transform', `translate(${pos.M.x.toFixed(1)} ${pos.M.y.toFixed(1)}) scale(${S2})`);
+    // 매달린 물체가 위에 있으면 이름표를 아래로 내려 겹치지 않게 한다
+    const below = g.cy < m.cy && Math.abs(g.cx - m.cx) < g.hw + m.hw + 40;
+    setAttr($('#lM'), 'x', m.cx.toFixed(1));
+    setAttr($('#lM'), 'y', (below ? pos.M.y + m.b.b * S2 + 34 : pos.M.y + m.b.t * S2 - 16).toFixed(1));
+    const mag = Math.abs(F.mag);
+    let out = '';
+    if (mag > 0.35) {
+      const ux = F.x / mag, uy = F.y / mag, L = clamp(18 + mag * 3, 18, 110);
+      out += `<path class="arw" d="${arrow(g.cx, g.cy, ux, uy, L)}"/>`;
+      out += `<path class="arw" d="${arrow(m.cx, m.cy, -ux, -uy, L)}"/>`;
+      const tx = g.cx + (ux < 0 ? -g.hw : g.hw), ty = g.cy - g.hh - 12;
+      out += `<text class="arw-t" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${ux < 0 ? 'start' : 'end'}">${F.mag > 0 ? '척력' : '인력'}</text>`;
+    }
+    const arrows = $('#arrows');
+    if (arrows && arrows.innerHTML !== out) arrows.innerHTML = out;
+  }
+
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(0.05, lastT ? (t - lastT) / 1000 : 0.016);
+    lastT = t;
+    const qa = charge('a'), qm = moverCharge();
+    const steps = 6, h = dt / steps;
+    let F = { x:0, y:0, mag:0 };
+    for (let i = 0; i < steps; i++) {
+      F = elecForce(bobGeo(pend.th), qa, qm);
+      const ft = F.x * Math.cos(pend.th) - F.y * Math.sin(pend.th);
+      const acc = ft - 30 * Math.sin(pend.th) - 3.2 * pend.w;
+      pend.w += acc * h; pend.th += pend.w * h;
+      if (pend.th > MAX_TH) { pend.th = MAX_TH; pend.w = 0; }
+      if (pend.th < -MAX_TH) { pend.th = -MAX_TH; pend.w = 0; }
+    }
+    drawMode2(F);
+  }
+  function startLoop() { if (!raf) { lastT = 0; raf = requestAnimationFrame(frame); } }
+  function stopLoop() { cancelAnimationFrame(raf); raf = 0; }
+
+  // 끌기
+  svg.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.drag');
+    if (!g || autoBusy) return;
+    const key = st.mode === 1 ? 'B' : 'M';
+    const p = svgPt(e);
+    drag = { id:e.pointerId, key, g, dx:p.x - pos[key].x, dy:p.y - pos[key].y, travel:0 };
+    g.setPointerCapture(e.pointerId);
+    g.classList.add('is-dragging');
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = svgPt(e), o = pos[drag.key];
+    const s = st.mode === 1 ? 1 : S2;
+    const b = BOX[MATS[st.mode === 1 ? st.b : moverId()].kind];
+    const nx = clamp(p.x - drag.dx, -b.l*s, L.W - b.r*s);
+    const ny = clamp(p.y - drag.dy, -b.t*s, L.H - b.b*s);
+    const moved = Math.hypot(nx - o.x, ny - o.y);
+    o.x = nx; o.y = ny;
+    if (st.mode === 1) {
+      const pt = overlap();
+      if (pt) {
+        drag.travel += moved;
+        while (drag.travel >= 70) { drag.travel -= 70; stroke(pt); }
+      } else drag.travel = 0;
+    }
+    updatePositions();
+  });
+  const endDrag = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.g.classList.remove('is-dragging');
+    drag = null;
+  };
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  // 화면 글
+  function updateSeries() {
+    $('#series').innerHTML = '<li class="end qp">(+)</li>' + ORDER.map(id => {
+      const tags = [st.a === id ? 'A' : '', st.b === id ? 'B' : ''].filter(Boolean).join(' ');
+      return `<li class="${tags ? 'on' : ''}">${MATS[id].short}<span class="tag">${tags}</span></li>`;
+    }).join('') + '<li class="end qm">(−)</li>';
+  }
+
+  function updateHint() {
+    const A = MATS[st.a], B = MATS[st.b];
+    let h;
+    if (st.mode === 1) {
+      if (!giverKey()) h = '같은 물질끼리는 문질러도 전자가 이동하지 않아요. 아래에서 물체 하나를 바꿔 보세요.';
+      else if (st.strokes === 0) h = `${josa(B.name, '을/를')} 끌어서 ${A.name} 위를 쓱쓱 문질러 보세요.`;
+      else if (st.moved >= maxMove()) h = '충분히 문질렀어요. 2단계에서 전기력을 관찰해 보세요.';
+      else h = '계속 문지르면 전자가 더 옮겨 가요.';
+    } else {
+      if (!charge('a')) h = `매달린 ${A.name}에 전하가 없어요. 1단계에서 먼저 문질러 주세요.`;
+      else h = `${josa(moverName(), '을/를')} 끌어서 매달린 ${A.name} 가까이 가져가 보세요.`;
+    }
+    $('#hint').textContent = h;
+    $('#act').textContent = st.mode === 1 ? '한 번 문지르기' : '물체 제자리로';
+  }
+
+  function updateRecord() {
+    const A = MATS[st.a], B = MATS[st.b];
+    const g = giverKey();
+    let lines = [];
+    if (st.mode === 1) {
+      if (!g) {
+        lines = [
+          `물체 A와 물체 B가 모두 ${josa(A.name, '이에요/예요')}.`,
+          '같은 물질끼리는 전자를 끌어당기는 정도가 같아서 문질러도 전자가 이동하지 않아요.',
+          `문지른 횟수 <b>${st.strokes}</b>번, 이동한 전자 <b>0</b>개`,
+        ];
+      } else if (st.strokes === 0) {
+        lines = [
+          '아직 문지르지 않았어요.',
+          '지금은 두 물체 모두 (+)전하와 (−)전하의 양이 같아요. 이런 물체는 전기를 띠지 않아요(중성).',
+        ];
+      } else {
+        const G = MATS[st[g]], R = MATS[st[g === 'a' ? 'b' : 'a']];
+        lines = [
+          `문지른 횟수 <b>${st.strokes}</b>번, 이동한 전자 <b>${st.moved}</b>개`,
+          `전자는 ${G.name}에서 ${R.name} 쪽으로 옮겨 갔어요.`,
+          `${josa(G.name, '은/는')} 전자를 잃어서 <span class="qp">(+)전하</span>를 띠어요.`,
+          `${josa(R.name, '은/는')} 전자를 얻어서 <span class="qm">(−)전하</span>를 띠어요.`,
+          `두 물체의 전하를 더하면 (+${st.moved}) + (−${st.moved}) = 0이에요. 전하는 새로 생기지 않고 옮겨 갈 뿐이에요.`,
+        ];
+        if (st.moved >= maxMove()) lines.push(`이 실험에서는 전자 ${maxMove()}개까지 보여 줘요. 대전열에서 멀리 떨어진 물체끼리 문지를수록 더 많은 전자가 옮겨 가요.`);
+      }
+    } else {
+      const qa = charge('a'), qm = moverCharge();
+      if (!qa) {
+        lines = [
+          '매달린 물체에 전하가 없어서 아무 힘도 작용하지 않아요.',
+          '1단계에서 서로 다른 두 물체를 문질러 전기를 띠게 해 주세요.',
+        ];
+      } else {
+        lines = [
+          `매달린 ${A.name} <span class="${qClass(qa)}">${fmtQ(qa)}</span>, 가져간 ${moverName()} <span class="${qClass(qm)}">${fmtQ(qm)}</span>`,
+          qa * qm > 0
+            ? '같은 종류의 전하끼리는 서로 밀어내요. 이 힘을 <b>척력</b>이라고 해요.'
+            : '다른 종류의 전하끼리는 서로 끌어당겨요. 이 힘을 <b>인력</b>이라고 해요.',
+          '가까이 가져갈수록 매달린 물체가 더 크게 움직여요. 거리가 가까울수록 전기력이 커요.',
+          '두 화살표는 길이가 같고 방향이 반대예요. 두 물체는 서로에게 같은 크기의 힘을 주고받아요.',
+        ];
+      }
+    }
+    $('#record').innerHTML = lines.map(l => `<li>${l}</li>`).join('');
+  }
+
+  function updatePredict() {
+    const box = $('#predict');
+    box.hidden = st.mode !== 1;
+    if (box.hidden) return;
+    const A = MATS[st.a], B = MATS[st.b];
+    const opts = [['a', A.name], ['b', B.name], ['none', '전자가 이동하지 않아요']];
+    if (st.a === st.b) opts.splice(1, 1);
+    $('#choices').innerHTML = opts.map(([v, t]) =>
+      `<button type="button" class="btn" data-v="${v}" aria-pressed="${st.predict === v}">${t}</button>`).join('');
+    const v = $('#verdict');
+    v.className = 'verdict';
+    if (!st.predict) { v.textContent = st.strokes ? '' : '예상을 고른 다음 문질러서 확인해 보세요.'; return; }
+    if (!st.strokes) { v.textContent = '이제 문질러서 확인해 보세요.'; return; }
+    const rk = receiverKey(), answer = rk || 'none';
+    const g = giverKey();
+    const why = rk
+      ? `대전열에서 ${josa(MATS[st[rk]].name, '이/가')} ${MATS[st[g]].name}보다 (−)쪽에 있어서 전자를 얻어요.`
+      : '같은 물질끼리는 전자가 이동하지 않아요.';
+    if (st.predict === answer) { v.textContent = `예상이 맞았어요. ${why}`; v.classList.add('ok'); }
+    else v.textContent = `예상과 달라요. ${why}`;
+  }
+
+  function buildPickers() {
+    const pick = (name, id, label, on) => {
+      const b = BOX[MATS[id].kind];
+      const vb = `${b.l - 8} ${b.t - 8} ${b.r - b.l + 16} ${b.b - b.t + 16}`;
+      return `<label class="pick${on ? ' on' : ''}"><input type="radio" name="${name}" id="${name}-${label.v}" value="${label.v}"${on ? ' checked' : ''}>` +
+        `<svg viewBox="${vb}" aria-hidden="true">${shapeSVG(id)}</svg><span>${label.t}</span></label>`;
+    };
+    $('#pickA .chips').innerHTML = ORDER.map(id => pick('matA', id, { v:id, t:MATS[id].name }, st.a === id)).join('');
+    $('#pickB .chips').innerHTML = ORDER.map(id => pick('matB', id, { v:id, t:MATS[id].name }, st.b === id)).join('');
+    const qb = charge('b'), qa = charge('a');
+    $('#pickM .chips').innerHTML =
+      pick('mover', st.b, { v:'b', t:`${MATS[st.b].name} <em class="${qClass(qb)}">${qb ? fmtQ(qb) : '중성'}</em>` }, st.mover === 'b') +
+      pick('mover', st.a, { v:'twin', t:`같은 방법으로 문지른 ${MATS[st.a].name} <em class="${qClass(qa)}">${qa ? fmtQ(qa) : '중성'}</em>` }, st.mover === 'twin');
+    $('#pickA').hidden = $('#pickB').hidden = st.mode !== 1;
+    $('#pickM').hidden = st.mode !== 2;
+  }
+
+  function refresh() {
+    updateCharges();
+    updateSeries();
+    updateHint();
+    updateRecord();
+    updatePredict();
+  }
+
+  function resetCharges() {
+    gen++;
+    st.moved = 0; st.strokes = 0; st.inFlight = 0; st.predict = null;
+    pend.th = 0; pend.w = 0;
+    pos.A = { ...HOME.A }; pos.B = { ...HOME.B }; pos.M = { ...HOME.M };
+  }
+
+  function setMode(mode) {
+    st.mode = mode;
+    gen++; st.inFlight = 0;
+    document.querySelectorAll('.step').forEach(b => {
+      if (+b.dataset.mode === mode) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    });
+    pos.B = { ...HOME.B }; pos.M = { ...HOME.M };
+    pend.th = 0; pend.w = 0;
+    buildPickers();
+    buildScene();
+    refresh();
+    if (mode === 2) startLoop(); else stopLoop();
+  }
+
+  // 이벤트
+  document.querySelectorAll('.step').forEach(b => b.addEventListener('click', () => setMode(+b.dataset.mode)));
+  $('#reset').addEventListener('click', () => { resetCharges(); setMode(st.mode); });
+  $('#act').addEventListener('click', () => {
+    if (st.mode === 1) autoRub();
+    else { pos.M = { ...HOME.M }; }
+  });
+  $('#ledge').addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'matA') st.a = t.value;
+    else if (t.name === 'matB') st.b = t.value;
+    else if (t.name === 'mover') { st.mover = t.value; buildPickers(); buildScene(); refresh(); return; }
+    else return;
+    resetCharges();
+    buildPickers(); buildScene(); refresh();
+  });
+  $('#choices').addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if (!b) return;
+    st.predict = b.dataset.v;
+    updatePredict();
+  });
+
+  function applyLayout() {
+    L = narrowMQ.matches ? LAYOUTS.tall : LAYOUTS.wide;
+    PIVOT = L.PIVOT; HOME = L.HOME;
+    pos.A = { ...HOME.A };
+    svg.setAttribute('viewBox', `0 0 ${L.W} ${L.H}`);
+    svg.style.aspectRatio = `${L.W} / ${L.H}`;
+  }
+  narrowMQ.addEventListener('change', () => { applyLayout(); setMode(st.mode); });
+
+  applyLayout();
+  setMode(1);
+})();
+</script>
+</body>
+</html>
