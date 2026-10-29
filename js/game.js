@@ -1135,6 +1135,7 @@
     if (Math.floor(game.time * 2) % 2 === 0) {
       text('Enter / Space 로 시작', W / 2, 462, { size: 26, color: '#ff6b6b', stroke: '#fff', strokeWidth: 6 });
     }
+    text('키가 안 먹으면 화면을 한 번 클릭해 주세요', W / 2, 490, { size: 14, color: '#a0928a' });
     text('게임패드를 연결하면 연결한 순서대로 1P, 2P ... 로 조작돼요', W / 2, H - 18, { size: 14, color: '#c9cbe3' });
 
     // 바닥에서 뛰노는 친구들
