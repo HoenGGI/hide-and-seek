@@ -1,7 +1,7 @@
 {
   "name": "deulpul",
   "version": "1.0.0",
-  "description": "들풀 동행기",
+  "description": "환켓몬스터",
   "main": "main.js",
   "author": "HoenGGI",
   "private": true,
@@ -26,7 +26,7 @@
       "icon": "icon.png"
     },
     "portable": {
-      "artifactName": "들풀 동행기.exe"
+      "artifactName": "환켓몬스터.exe"
     }
   },
   "devDependencies": {

@@ -7,7 +7,7 @@ const bundled=path.join(__dirname,'app');
 const gameDir=()=>path.join(app.getPath('userData'),'game');
 const versionOf=html=>{const m=/const GAME_VERSION=(\d+);/.exec(html);return m?+m[1]:0};
 // a download only counts if it is clearly the game, not an error page or a half file
-const looksValid=html=>html.length>50000&&html.includes('<title>들풀 동행기</title>')&&versionOf(html)>0;
+const looksValid=html=>html.length>50000&&(html.includes('<title>환켓몬스터</title>')||html.includes('<title>들풀 동행기</title>'))&&versionOf(html)>0;
 
 // pick the newest of the bundled copy and the last download, and lay it out next to the Photon SDK
 function prepareGame(){
@@ -27,7 +27,7 @@ async function checkUpdate(win,current){
     const html=await res.text();
     if(!looksValid(html)||versionOf(html)<=current)return;
     fs.writeFileSync(path.join(gameDir(),'latest.html'),html);
-    const {response}=await dialog.showMessageBox(win,{type:'info',title:'들풀 동행기',buttons:['지금 적용','다음에 켤 때'],defaultId:1,cancelId:1,
+    const {response}=await dialog.showMessageBox(win,{type:'info',title:'환켓몬스터',buttons:['지금 적용','다음에 켤 때'],defaultId:1,cancelId:1,
       message:`새 버전(v${versionOf(html)})을 받았어요.`,detail:'지금 적용하면 게임이 다시 시작돼요. 저장하지 않은 진행은 사라지니, 먼저 메뉴에서 저장해 주세요.'});
     if(response===0){prepareGame();win.loadFile(path.join(gameDir(),'index.html'))}
   }catch(e){} // offline or GitHub unreachable: keep playing the version we have
@@ -38,7 +38,7 @@ function readConfig(){try{return JSON.parse(fs.readFileSync(path.join(bundled,'c
 function create(){
   const win=new BrowserWindow({
     width:1024,height:820,minWidth:660,minHeight:540,
-    backgroundColor:'#000000',title:'들풀 동행기',autoHideMenuBar:true,
+    backgroundColor:'#000000',title:'환켓몬스터',autoHideMenuBar:true,
     icon:path.join(bundled,'icon.png'),
     webPreferences:{preload:path.join(__dirname,'preload.js'),additionalArguments:['--deulpul-appid='+(readConfig().appId||'')]},
   });
