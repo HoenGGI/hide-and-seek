@@ -1,0 +1,37 @@
+{
+  "name": "deulpul",
+  "version": "1.0.0",
+  "description": "들풀 동행기",
+  "main": "main.js",
+  "author": "HoenGGI",
+  "private": true,
+  "scripts": {
+    "sync": "node sync.js",
+    "start": "npm run sync && electron .",
+    "dist": "npm run sync && electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.hoenggi.deulpul",
+    "productName": "들풀 동행기",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    },
+    "portable": {
+      "artifactName": "들풀 동행기.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "photon-realtime": "4.4.0"
+  }
+}
