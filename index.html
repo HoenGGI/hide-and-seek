@@ -1,6 +1,29 @@
 <!doctype html>
+<html lang="ko">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>환켓몬스터</title>
-<meta http-equiv="refresh" content="0; url=몬스터게임.html">
-<a href="몬스터게임.html">환켓몬스터 시작하기</a>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nanum+Gothic+Coding:wght@700&display=swap">
+<style>
+/* deliberately single dark theme, matching the game's night-sea title screen */
+:root{--bg:#07060b;--fg:#f4f1ff;--dim:#8a84a3;--gold:#ffd83a;--navy:#1e3c96;--panel:#15132a;--line:#3a3550;color-scheme:dark}
+body{margin:0;min-height:100dvh;background:radial-gradient(circle at 50% 30%,#1a2a4a,var(--bg) 70%);color:var(--fg);
+  font-family:"Nanum Gothic Coding",monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:32px 16px;box-sizing:border-box;text-align:center}
+h1{margin:0;font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:clamp(48px,14vw,88px);color:var(--gold);
+  -webkit-text-stroke:3px var(--navy);paint-order:stroke fill;text-shadow:0 6px 0 #0a1238}
+.sub{margin:-12px 0 0;color:#c8c4d8}
+.btns{display:flex;flex-direction:column;gap:12px;width:min(340px,100%)}
+a.btn{display:block;padding:16px;border-radius:12px;font-size:18px;text-decoration:none;border:2px solid var(--line);background:var(--panel);color:var(--fg)}
+a.btn.main{background:var(--gold);color:#1a1a24;border-color:var(--gold)}
+a.btn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.note{color:var(--dim);font-size:13px;line-height:1.7;max-width:340px;margin:0}
+</style>
+<h1>환켓몬스터</h1>
+<p class="sub">꺼진 등대를 다시 켜는 여행</p>
+<div class="btns">
+  <a class="btn main" href="몬스터게임.html">브라우저에서 바로 하기</a>
+  <a class="btn" href="https://github.com/HoenGGI/hide-and-seek/releases/latest/download/HwanketMonster.exe">PC 버전 받기 (Windows)</a>
+</div>
+<p class="note">휴대폰은 "바로 하기"로 열고 브라우저 메뉴의 <b>홈 화면에 추가</b>를 누르면 앱처럼 쓸 수 있어요.<br>PC 버전은 설치 없이 바로 실행되고, 새 버전이 나오면 알아서 업데이트돼요.</p>
+</html>

@@ -26,7 +26,7 @@
       "icon": "icon.png"
     },
     "portable": {
-      "artifactName": "환켓몬스터.exe"
+      "artifactName": "HwanketMonster.exe"
     }
   },
   "devDependencies": {
