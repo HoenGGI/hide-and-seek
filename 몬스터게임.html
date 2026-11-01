@@ -128,6 +128,10 @@ const MUSIC={
     lead:'A4 - - - C5 - - -  B4 - - - G4 - - -  A4 - - - E5 - - -  D5 - - - - - . .  F5 - - - E5 - - -  D5 - - - C5 - - -  B4 - - - G#4 - - -  A4 - - - - - . .',
     bass:'A2 - - - - - - -  E2 - - - - - - -  F2 - - - - - - -  E2 - - - - - - -',
     arp:'A3 C4 E4 C4 A3 C4 E4 C4  E3 G#3 B3 G#3 E3 G#3 B3 G#3  F3 A3 C4 A3 F3 A3 C4 A3  E3 G#3 B3 G#3 E3 G#3 B3 G#3'},
+  legend:{bpm:120,wave:'sawtooth',
+    lead:'E5 - - - B4 - - -  C5 - D5 - E5 - G5 -  F#5 - - - D5 - - -  E5 - - - - - . .  G5 - - - F#5 - E5 -  D5 - - - B4 - - -  C5 - D5 - E5 - F#5 -  B4 - - - - - . .',
+    bass:'E2 . E2 B2 E2 . E2 B2  C2 . C2 G2 C2 . C2 G2  D2 . D2 A2 D2 . D2 A2  B1 . B1 F#2 B1 . B1 F#2',
+    arp:'E4 G4 B4 G4 E4 G4 B4 G4  C4 E4 G4 E4 C4 E4 G4 E4  D4 F#4 A4 F#4 D4 F#4 A4 F#4  B3 D#4 F#4 D#4 B3 D#4 F#4 D#4',drum:'k . s . k k s h'},
   battle:{bpm:152,
     lead:'A4 - C5 - E5 - A5 -  G5 - E5 - C5 - D5 -  E5 - - - D5 C5 B4 -  C5 - - - - - . .  F5 - E5 - D5 - C5 -  B4 - C5 - D5 - E5 -  F5 - E5 - D5 - B4 -  E5 - - - - - . .',
     bass:'A2 A3 A2 A3 A2 A3 A2 A3  F2 F3 F2 F3 F2 F3 F2 F3  G2 G3 G2 G3 G2 G3 G2 G3  E2 E3 E2 E3 E2 E3 E2 E3',
@@ -207,6 +211,7 @@ const MV={
   needle:{n:'솔잎침',t:'풀',p:40,a:100},thorn:{n:'가시뿌리',t:'풀',p:65,a:95},echo:{n:'숲울림',t:'풀',p:90,a:85},
   shade:{n:'달그늘',t:'달',p:40,a:100},crescent:{n:'초승달베기',t:'달',p:65,a:95},fullmoon:{n:'만월파동',t:'달',p:90,a:85},
   filings:{n:'쇳가루',t:'쇠',p:40,a:100},hammer:{n:'쇠망치',t:'쇠',p:65,a:95},forge:{n:'대장간 일격',t:'쇠',p:90,a:85},
+  bleach:{n:'탈색의 빛',t:'보통',p:80,a:90},
 };
 const LS={
   sun:[[1,'tackle'],[1,'glare'],[5,'spark'],[9,'brace'],[12,'sunspear'],[16,'noon']],
@@ -218,6 +223,7 @@ const LS={
   newt:[[1,'tackle'],[4,'spray'],[8,'glare'],[12,'mistblade'],[17,'surge']],
   fly:[[1,'tackle'],[3,'spark'],[7,'rally'],[11,'sunspear'],[16,'shade']],
   ray:[[1,'tackle'],[1,'brace'],[1,'spark'],[1,'sunspear']],
+  king:[[1,'bleach'],[1,'crescent'],[1,'rest'],[1,'fullmoon']],
 };
 // b: [hp, atk, def, spd]; y: exp yield; cr: how easily a thread holds it
 const SP={
@@ -235,8 +241,9 @@ const SP={
   jolljol:{n:'근우',t:'물',b:[46,44,44,50],y:52,cr:.55,ls:LS.newt,d:'물가의 풀숲을 미끄러지듯 다닌다. 머리의 지느러미로 안개의 습기를 느낀다.'},
   kkam:{n:'수현',t:'불',b:[40,48,36,64],y:58,cr:.4,ls:LS.fly,d:'꽁무니의 빛으로 동료와 이야기한다. 깜빡이는 간격마다 뜻이 다르다고 한다.'},
   deungbul:{n:'도현이',t:'불',b:[64,66,56,60],y:180,cr:.1,ls:LS.ray,d:'꼬리 끝의 등불로 밤바다를 건너는 배를 이끈다. 물빛포구의 등대지기와 오래 함께해 왔다.'},
+  donggun:{n:'동건',t:'달',b:[80,80,76,76],y:250,cr:.08,ls:LS.king,d:'세상의 색을 거두어 왕관에 담았다는 전설의 왕. 등대에 불이 켜진 밤이면 포구 끝에 모습을 드러낸다고 한다.'},
 };
-const DEX=['byeot','noeul','iseul','angae','dotor','chamdo','bamsom','dalsom','jing','jinggap','galdae','jolljol','kkam','deungbul'];
+const DEX=['byeot','noeul','iseul','angae','dotor','chamdo','bamsom','dalsom','jing','jinggap','galdae','jolljol','kkam','deungbul','donggun'];
 const STARTERS=['byeot','iseul','dotor'];
 console.assert(DEX.every(s=>SP[s]&&SP[s].ls.every(([,m])=>MV[m])&&(!SP[s].evo||SP[SP[s].evo[1]])),'species data');
 
@@ -592,6 +599,20 @@ const DRAW={
     E(g,-7,-29,1.2,1.2,'#ffe98a');E(g,7,-29,1.2,1.2,'#ffe98a');
     eyes(g,[-3,3],-18,1.6,bl,'#ffe98a');
   },
+  donggun(g,t,bl){
+    const w=Math.sin(t*1.6)*1.5,gems=['#ff5a5a','#ffb03a','#ffe14d','#6cc65a','#58a8f0'];
+    // a pale cape falling from the shoulders
+    for(const s of [-1,1]){g.save();g.scale(s,1);P(g,[5,-27,16+w*0.4,-20,19+w,-2,8,0,6,-12],'#d8d4ec','#6a6488');P(g,[9,-20,15+w*0.4,-12,16+w,-3,10,-2],'#c4bede');g.restore()}
+    E(g,-4,-1,3,1.5,'#9a94b8');E(g,4,-1,3,1.5,'#9a94b8');
+    E(g,0,-14,10,13,'#f6f4fc','#6a6488');
+    // every colour it took glitters in the chest gem, cycling
+    if(!BACK){P(g,[0,-21,4,-16,0,-11,-4,-16],`hsl(${(t*60)%360},80%,65%)`,'#6a6488');g.fillStyle='rgba(255,255,255,.8)';g.fillRect(-1,-19,1,2)}
+    E(g,0,-30,8,7,'#fbfaff','#6a6488');
+    P(g,[-7,-34,-7,-40,-4,-37,-2,-42,0,-38,2,-42,4,-37,7,-40,7,-34],'#e8c048','#7a5a10');
+    [[-7,-40],[-2,-42],[2,-42],[7,-40],[0,-36]].forEach(([x,y],i)=>{g.fillStyle=(t*3+i)%2.5<0.4?'#ffffff':gems[i];g.fillRect(x-1,y,2,2)});
+    eyes(g,[-3,3],-30,1.5,bl,'#5a4a9a');
+    for(let i=0;i<5;i++){const a=t*0.8+i*1.256,r=17+Math.sin(t*2+i)*2;g.fillStyle=gems[i];g.fillRect(Math.round(Math.cos(a)*r),Math.round(-18+Math.sin(a)*r*0.7),1,1)}
+  },
   deungbul(g,t,bl){
     const f=Math.sin(t*2.5)*3;g.translate(0,Math.sin(t*1.8)*1.5-4);
     g.strokeStyle='#14284a';g.lineWidth=1.5;g.beginPath();g.moveTo(0,-12);g.quadraticCurveTo(6,-4,12,-2+f*0.3);g.stroke();
@@ -618,8 +639,9 @@ function drawMonAt(m,x,y,s,o={}){
   og.globalCompositeOperation='source-in';og.fillStyle='#1c1c28';og.fillRect(0,0,48,48);og.globalCompositeOperation='source-over';og.drawImage(mc,0,0);
   if(o.tint){og.globalCompositeOperation='source-atop';og.fillStyle=o.tint;og.fillRect(0,0,48,48);og.globalCompositeOperation='source-over'}
   const k=s*(o.k??1);
-  ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=o.alpha??1;ctx.translate(Math.round(x),Math.round(y));if(o.flip)ctx.scale(-1,1);
-  ctx.drawImage(oc,-24*k,-46*k,48*k,48*k);ctx.restore();
+  const c=o.g||ctx; // o.g: draw onto the overworld canvas instead
+  c.save();c.imageSmoothingEnabled=false;c.globalAlpha=o.alpha??1;c.translate(Math.round(x),Math.round(y));if(o.flip)c.scale(-1,1);
+  c.drawImage(oc,-24*k,-46*k,48*k,48*k);c.restore();
 }
 const oc=document.createElement('canvas');oc.width=oc.height=48;const og=oc.getContext('2d');
 
@@ -738,7 +760,7 @@ function runQ(dt){
 let scene='title',T=0,G=null,B=null,EVO=null,END=null;
 const M={moving:false,t:0,dr:0,dc:0,banner:0,flashAt:-9};
 // bump on every release: the exe updater compares it, and Photon keeps different versions in separate worlds
-const GAME_VERSION=1;
+const GAME_VERSION=2;
 const SAVE_KEY='deulpul-save-v1';
 function newGame(){return {map:0,r:5,c:3,face:'down',party:[],box:[],bag:{honey:0,honey2:0,revive:0,thread:0,thread2:0},money:500,F:{beat:{}},seen:[],caught:[],lastHeal:{m:0,r:5,c:3},time:0,name:'기록원'}}
 function readSave(){
@@ -775,7 +797,8 @@ const NPCS=[
       onWin:()=>say(['서진','난 포구에 먼저 가 있을게. 다음엔 안 져.'],'서진은 안개 너머로 먼저 달려갔다.')} ],
   [ {id:'seojin2',r:12,c:12,look:'rival',name:'서진',if:()=>G.F.beat.seojin,talk:()=>say(G.F.badge?['서진','등대 불빛, 여기서도 잘 보여. …축하해. 다음 시험은 내가 먼저 붙을 거야.']:['서진','하람 씨는 등대 꼭대기에 있어. 견습생 둘이 계단을 지키고 있으니까 각오해 둬.'])},
     {id:'sailor',r:5,c:5,look:'sailor',name:'뱃사람',lines:[['뱃사람','쇠는 풀을 베어 내고 달빛을 되비추지. 대신 불에 녹고 물에 녹이 슬어.']]},
-    {id:'angler',r:3,c:6,look:'fisher',name:'낚시꾼',lines:[['낚시꾼','달은 우거진 풀숲 그늘에선 보이지도 않고, 쇠 거울 앞에선 빛을 빼앗기지.'],['낚시꾼','그래도 밤의 냉기는 불씨를 식히고, 밀물과 썰물은 달이 부리는 거야.']]},
+    {id:'donggun',r:2,c:8,mon:'donggun',name:'동건',if:()=>G.F.badge&&!G.caught.includes('donggun'),talk:legendTalk},
+    {id:'angler',r:3,c:6,look:'fisher',name:'낚시꾼',lines:[['낚시꾼','달은 우거진 풀숲 그늘에선 보이지도 않고, 쇠 거울 앞에선 빛을 빼앗기지.'],['낚시꾼','그래도 밤의 냉기는 불씨를 식히고, 밀물과 썰물은 달이 부리는 거야.'],['낚시꾼','옛날 얘기 하나 해 줄까. 등대에 불이 켜진 밤이면 이 부두 끝에 색 없는 왕이 선다더군.']]},
     {id:'nurse2',r:9,c:7,look:'nurse',name:'쉼터지기',lines:[['쉼터지기','등대가 꺼진 뒤로 밤배가 잘 들어오질 못해요. 누가 하람 씨 마음을 좀 돌려 줬으면.']]} ],
   [ {id:'narae',r:9,c:7,face:'right',look:'apprentice',name:'나래',cls:'견습생',party:[['kkam',10],['jolljol',10]],
       pre:[['나래','등대 시험을 보러 왔다고? 먼저 견습생부터 넘어 봐.']],lose:'빛이 꺼졌어… 내 쪽이.',after:'하람 씨는 풀, 물, 불을 골고루 써. 한 가지 대비로는 부족할 거야.'},
@@ -1064,6 +1087,7 @@ function drawMap(){
   ents.push(...npcs(G.map).map((n,i)=>({y:n.r,draw:()=>{
     const x=n.c*TS,y=n.r*TS;
     g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x+3,y+13,10,3);
+    if(n.mon){drawMonAt(n.mon,x+8,y+16+Math.round(Math.sin(T*2)),0.75,{g,seed:7});return}
     drawPerson(g,LOOK[n.look],n.face,0,x,y);
     if(n.alert){g.fillStyle='#202030';g.fillRect(x+3,y-23,10,13);g.fillStyle='#fff';g.fillRect(x+4,y-22,8,11);g.fillStyle='#e04040';g.fillRect(x+7,y-20,2,5);g.fillRect(x+7,y-14,2,2)}
   }})));
@@ -1156,13 +1180,13 @@ function dexView(){
 
 // ---------- battle ----------
 const team=()=>B.mine||G.party,pl=()=>team()[B.pi],foe=()=>B.foes[B.fi];
-function startBattle(foes,tr,mine){
+function startBattle(foes,tr,mine,intro){
   scene='battle';
   B={foes,fi:0,tr,mine,pi:(mine||G.party).findIndex(m=>m.hp>0),st:[{atk:0,def:0},{atk:0,def:0}],dhp:[foes[0].hp,0],open:0,foeX:320,plX:320,foeVis:!tr,trSpr:tr&&(tr.lookSpr||LOOK[tr.look]),trGo:0,meVis:true,meGo:0,plVis:false,anim:{},spool:null,foeK:1,over:false};
   B.dhp[1]=pl().hp;see(foes[0].sp);
-  playMusic(tr&&tr.leader?'leader':'battle');
+  playMusic(tr&&tr.leader?'leader':intro?'legend':'battle');
   now({wait:0.8},
-    tr?(tr.pvp?`${jo(tr.name,'과','와')}의 대전이 시작됐다!`:`${tr.cls} ${jo(tr.name,'이','가')} 승부를 걸어왔다!`):{text:`풀숲에서 ${jo(nm(foes[0]),'이','가')} 튀어나왔다!`},
+    tr?(tr.pvp?`${jo(tr.name,'과','와')}의 대전이 시작됐다!`:`${tr.cls} ${jo(tr.name,'이','가')} 승부를 걸어왔다!`):{text:intro||`풀숲에서 ${jo(nm(foes[0]),'이','가')} 튀어나왔다!`},
     ...(tr?[()=>{B.trGo=T},{wait:0.35},()=>{B.foeVis=true;B.foeX=240;SFX.pop()},{text:`${jo(tr.name,'은','는')} ${jo(nm(foes[0]),'을','를')} 내보냈다!`,auto:1}]:[]),
     ...sendOut(B.pi,false),turnMenu);
 }
@@ -1311,6 +1335,7 @@ function endBattle(kind){
   Q.push({wait:0.3},()=>{scene='map';playMusic(MAPS[G.map].music);afterBattle(kind)});
 }
 function afterBattle(kind){
+  if(kind==='win'&&!B.tr&&B.foes[0].sp==='donggun')say('동건의 모습이 빛 속으로 흩어졌다. 언젠가 다시 나타날 것 같다.');
   if(kind==='pvp')return; // link battles use copies: nothing to heal, level or evolve
   if(kind==='lose'){
     const h=G.lastHeal;G.money=Math.floor(G.money/2);healAll();changeMap(h.m,h.r,h.c,'down');
@@ -1647,7 +1672,12 @@ function drawEnding(){
   lines.forEach((l,i)=>{const a=clamp(END.t-i*0.9,0,1);ctx.globalAlpha=a;text(l,40,60+i*40,i===4?30:20,i===4?'#ffe14d':'#fff');ctx.globalAlpha=1});
   if(END.t>5&&(T*2|0)%2)text('Z를 누르면 여행을 계속할 수 있다.'+(END.saved?' (진행은 자동으로 기록되었다)':''),40,440,16,'#c8c4d8');
 }
-function updEnding(){if(END.t>5&&hit('ok')){scene='map';playMusic(MAPS[G.map].music);say(['하람',NPCS[4][2].after])}}
+function updEnding(){if(END.t>5&&hit('ok')){scene='map';playMusic(MAPS[G.map].music);say(['하람',NPCS[4][2].after],'…창밖으로 보이는 포구의 부두 끝에서, 희미한 빛이 일렁인 것 같다.')}}
+// the legendary: only after the lighthouse is lit, at the end of the pier; it stays until caught
+function legendTalk(){
+  say('…주위의 색이 조금씩 빠져나가는 것 같다.',['동건','……'],'왕관의 보석들이 한꺼번에 빛난다!',()=>{SFX.enc();M.flashAt=T},{wait:0.6},
+    ()=>startBattle([makeMon('donggun',20)],null,null,'탈색의 왕 동건이 모습을 드러냈다!'));
+}
 
 // ---------- main loop ----------
 let last=0;
