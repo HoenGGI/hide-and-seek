@@ -313,7 +313,14 @@ const MV={
   lull:{n:'자장 달빛',t:'에스퍼',a:60,ail:'slp'},agile:{n:'고속 이동',t:'에스퍼',fx:['self','spd',2]},
   filings:{n:'쇳가루',t:'강철',p:40,a:100,st:['par',15]},metal:{n:'메탈 클로',t:'강철',p:50,a:95,up:['self','atk',1,10]},
   hammer:{n:'쇠망치',t:'강철',p:65,a:95,st:['par',10]},forge:{n:'대장간 일격',t:'강철',p:90,a:85},ironwall:{n:'철벽 자세',t:'강철',fx:['self','def',2]},
-  rock:{n:'돌 떨구기',t:'바위',p:50,a:90},karate:{n:'당수',t:'격투',p:50,a:100},
+  rock:{n:'돌 떨구기',t:'바위',p:50,a:90},rockslide:{n:'바위 사태',t:'바위',p:75,a:90},dig:{n:'구멍 파기',t:'땅',p:80,a:100},
+  karate:{n:'당수',t:'격투',p:50,a:100},lowkick:{n:'다리 걸기',t:'격투',p:60,a:100,up:['foe','spd',-1,100]},cross:{n:'크로스 촙',t:'격투',p:100,a:80},
+  bulk:{n:'근육 키우기',t:'격투',fx:['self','atk',1]},
+  frost:{n:'서리 숨결',t:'얼음',p:40,a:100},iceshard:{n:'얼음 조각',t:'얼음',p:40,a:100,pri:1},icebeam:{n:'얼음 빔',t:'얼음',p:90,a:100,up:['foe','spd',-1,10]},
+  fairywind:{n:'요정의 바람',t:'페어리',p:40,a:100},charm:{n:'애교 부리기',t:'페어리',a:100,fx:['foe','atk',-2]},dazzle:{n:'반짝임 폭발',t:'페어리',p:90,a:100,up:['foe','atk',-1,30]},
+  dragbreath:{n:'용의 숨결',t:'드래곤',p:60,a:100,st:['par',30]},dragclaw:{n:'용의 발톱',t:'드래곤',p:80,a:100},
+  dragondance:{n:'용의 춤',t:'드래곤',fx:['self','atk',1]},outrage:{n:'역린 폭주',t:'드래곤',p:120,a:100,recoil:0.25},
+  stringshot:{n:'실뿜기',t:'벌레',a:95,fx:['foe','spd',-2]},silver:{n:'은빛 바람',t:'벌레',p:60,a:100,up:['self','atk',1,10]},
 };
 console.assert(Object.values(MV).every(m=>TCHART[m.t]),'move types');
 const AIL={
@@ -331,6 +338,15 @@ const LS={
   newt:[[1,'tackle'],[3,'sting'],[6,'spray'],[9,'glare'],[12,'bubble'],[15,'sludge'],[18,'mistblade'],[22,'toxic']],
   fly:[[1,'tackle'],[3,'jolt'],[6,'bite2'],[9,'wave'],[12,'quick'],[15,'shock'],[19,'buzz'],[24,'bolt']],
   ray:[[1,'brace'],[1,'shock'],[1,'ember2'],[1,'sunspear']],
+  grub:[[1,'tackle'],[1,'stringshot'],[4,'bite2'],[7,'wing'],[10,'silver'],[13,'spore'],[17,'buzz'],[21,'gust2']],
+  spark:[[1,'tackle'],[1,'glare'],[4,'jolt'],[8,'quick'],[11,'wave'],[14,'swift'],[18,'shock'],[24,'bolt']],
+  pebble:[[1,'tackle'],[1,'brace'],[5,'rock'],[9,'mud'],[13,'ironwall'],[17,'dig'],[21,'rockslide'],[27,'quake']],
+  petal:[[1,'tackle'],[1,'charm'],[5,'fairywind'],[9,'absorb'],[12,'rest'],[15,'pollen'],[18,'leafblade'],[22,'dazzle']],
+  drake:[[1,'tackle'],[1,'glare'],[6,'dragbreath'],[11,'snarl'],[16,'dragondance'],[20,'dragclaw'],[24,'wing'],[28,'gust2'],[32,'outrage']],
+  brawl:[[1,'tackle'],[1,'karate'],[6,'glare'],[10,'lowkick'],[14,'bulk'],[18,'rock'],[22,'cross']],
+  garden:[[1,'needle'],[1,'sting'],[6,'absorb'],[10,'pollen'],[14,'sludge'],[18,'leafblade'],[22,'toxic']],
+  snow:[[1,'tackle'],[1,'frost'],[6,'iceshard'],[10,'brace'],[14,'rest'],[18,'icebeam']],
+  seal:[[1,'tackle'],[1,'spray'],[5,'fairywind'],[9,'frost'],[13,'bubble'],[17,'mistblade'],[21,'dazzle']],
   king:[[1,'bleach'],[1,'shadow'],[1,'snarl'],[1,'rest']],
 };
 // b: [hp, atk, def, spd]; y: exp yield; cr: how easily a thread holds it
@@ -349,9 +365,24 @@ const SP={
   jolljol:{n:'근우',t:['물','독'],b:[46,44,44,50],y:52,cr:.55,ls:LS.newt,d:'물가의 풀숲을 미끄러지듯 다닌다. 머리의 지느러미로 안개의 습기를 느낀다.'},
   kkam:{n:'수현',t:['벌레','전기'],b:[40,48,36,64],y:58,cr:.4,ls:LS.fly,d:'꽁무니의 빛으로 동료와 이야기한다. 깜빡이는 간격마다 뜻이 다르다고 한다.'},
   deungbul:{n:'도현이',t:['불꽃','전기'],b:[64,66,56,60],y:180,cr:.1,ls:LS.ray,d:'꼬리 끝의 등불로 밤바다를 건너는 배를 이끈다. 물빛포구의 등대지기와 오래 함께해 왔다.'},
+  ujin:{n:'우진',t:['벌레'],b:[40,35,38,45],y:39,cr:.7,evo:[7,'seokju'],ls:LS.grub,d:'등에 나뭇잎 배낭을 메고 다닌다. 배낭 속에 모아 둔 잎을 다 먹으면 실을 뽑아 몸을 감싼다.'},
+  seokju:{n:'석주',t:['벌레','비행'],b:[60,50,52,72],y:120,cr:.4,ls:LS.grub,d:'날개의 눈알 무늬로 천적을 놀라게 한다. 날갯짓에서 떨어지는 가루를 마시면 졸음이 쏟아진다.'},
+  jinmo:{n:'진모',t:['전기'],b:[38,46,34,72],y:60,cr:.35,evo:[16,'jinmo2'],ls:LS.spark,d:'머리띠처럼 두른 파란 띠에 전기를 모아 둔다. 기분이 좋으면 꼬리 끝에서 불꽃이 튄다.'},
+  jinmo2:{n:'번개 진모',t:['전기'],b:[58,76,52,98],y:150,cr:.2,ls:LS.spark,d:'갈기가 곤두서면 근처의 등불이 한꺼번에 깜빡인다. 비 오는 날을 유난히 좋아한다.'},
+  seongjun:{n:'성준',t:['바위','땅'],b:[48,58,70,22],y:60,cr:.5,evo:[16,'seongjun2'],ls:LS.pebble,d:'머리의 모자는 오래된 조약돌이 굳어 생긴 것이다. 하루 대부분을 땅에 반쯤 묻힌 채 잠을 잔다.'},
+  seongjun2:{n:'바위산 성준',t:['바위','땅'],b:[76,90,104,32],y:160,cr:.2,ls:LS.pebble,d:'한 걸음 내디딜 때마다 땅이 울린다. 등의 바위 봉우리는 해마다 조금씩 높아진다.'},
+  minjae:{n:'민재',t:['페어리'],b:[56,38,48,40],y:58,cr:.5,evo:[15,'minjae2'],ls:LS.petal,d:'머리의 꽃은 기분에 따라 빛깔이 바뀐다. 다친 이를 보면 곁에 붙어 꽃향기를 뿌려 준다.'},
+  minjae2:{n:'꽃잎 민재',t:['페어리','풀'],b:[80,64,74,56],y:150,cr:.25,ls:LS.petal,d:'꽃잎 치마를 펼치고 빙글빙글 춤추면 발밑에 꽃이 피어난다고 한다.'},
+  juwon:{n:'주원',t:['드래곤'],b:[44,58,46,52],y:70,cr:.2,evo:[24,'juyong'],ls:LS.drake,d:'깊은 굴속 물웅덩이 근처에서 드물게 발견된다. 작은 날개로는 아직 날지 못한다.'},
+  juyong:{n:'주용',t:['드래곤','비행'],b:[84,108,84,86],y:220,cr:.08,ls:LS.drake,d:'보랏빛 날개를 펴면 바다 건너까지 단숨에 날아간다. 성질이 사나워 쉽게 곁을 내주지 않는다.'},
+  gwonsu:{n:'권수',t:['격투'],b:[58,80,48,52],y:90,cr:.35,ls:LS.brawl,d:'붉은 머리띠를 질끈 묶으면 싸울 준비가 끝난 것이다. 매일 아침 바위를 상대로 주먹을 단련한다.'},
+  junseo:{n:'준서',t:['풀','독'],b:[60,64,60,46],y:95,cr:.3,ls:LS.garden,d:'밀짚모자를 쓰고 정원을 가꾼다. 화가 나면 독 가시가 돋은 덩굴을 휘두른다.'},
+  seongju:{n:'성주',t:['얼음'],b:[62,58,64,44],y:95,cr:.3,ls:LS.snow,d:'몸에서 늘 찬 기운이 흘러나온다. 여름이면 동굴 가장 깊은 곳에 숨어 지낸다.'},
+  yeonwoo:{n:'연우',t:['물','페어리'],b:[66,50,62,58],y:95,cr:.3,ls:LS.seal,d:'빨간 리본은 처음 만난 사람이 묶어 준 것이라는 이야기가 있다. 얼음 위를 미끄러지며 논다.'},
   donggun:{n:'동건',t:['고스트','악'],b:[80,80,76,76],y:250,cr:.08,ls:LS.king,d:'세상의 색을 거두어 왕관에 담았다는 전설의 왕. 등대에 불이 켜진 밤이면 포구 끝에 모습을 드러낸다고 한다.'},
 };
-const DEX=['byeot','noeul','iseul','angae','dotor','chamdo','bamsom','dalsom','jing','jinggap','galdae','jolljol','kkam','deungbul','donggun'];
+const DEX=['byeot','noeul','iseul','angae','dotor','chamdo','bamsom','dalsom','jing','jinggap','galdae','jolljol','kkam','deungbul',
+  'ujin','seokju','jinmo','jinmo2','seongjun','seongjun2','minjae','minjae2','juwon','juyong','gwonsu','junseo','seongju','yeonwoo','donggun'];
 const STARTERS=['jing','dotor','byeot'];
 console.assert(DEX.every(s=>SP[s]&&SP[s].t.every(t=>TCHART[t])&&SP[s].ls.every(([,m])=>MV[m])&&(!SP[s].evo||SP[SP[s].evo[1]])),'species data');
 
@@ -409,7 +440,7 @@ const MAPS=[
     'T~~~~~~~~~~~..f.S.......f...f.....fT',
     'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT']},
   {name:'버들길',music:'route',north:2,south:0,
-    enc:[['bamsom',2,4,35],['galdae',2,4,30],['jolljol',3,5,30],['kkam',3,4,5]],rows:[
+    enc:[['bamsom',2,4,30],['ujin',2,4,28],['galdae',2,4,20],['jolljol',3,5,20],['jinmo',3,4,5],['kkam',3,4,4]],rows:[
     'TTTTTTTTTTTTTTTTT,,TTTTTTTTTTTTTTTTT',
     'TTTTTTTTTTggggT..,,..TTggggTTTTTTTTT',
     'T..gg..TT.gggg...,,...gggg.TTT....TT',
@@ -441,7 +472,7 @@ const MAPS=[
     'T................,,................T',
     'TTTTTTTTTTTTTTTTT,,TTTTTTTTTTTTTTTTT']},
   {name:'안개숲길',music:'forest',north:3,south:1,mist:true,
-    enc:[['iseul',5,8,28],['bamsom',6,8,18],['jolljol',6,8,16],['galdae',6,8,14],['kkam',5,7,15],['byeot',6,7,3],['jing',6,7,3],['dotor',6,7,3]],rows:[
+    enc:[['iseul',5,8,28],['bamsom',6,8,18],['jolljol',6,8,16],['galdae',6,8,14],['kkam',5,7,15],['byeot',6,7,3],['jing',6,7,3],['dotor',6,7,3],['minjae',5,7,12],['junseo',6,8,8],['ujin',5,6,10],['seokju',7,8,5]],rows:[
     'TTTTTTTTTTTTTTTTT,TTTTTTTTTTTTTTTTTT',
     'TTTTTTTTTTTTTTTTT,TTTTTTTTTTTTTTTTTT',
     'TTT.VTTTTTggg....,,....gggTTTTTTTTTT',
@@ -505,7 +536,7 @@ const MAPS=[
     'KKKKKKKKccKKKKKKKKKK',
     'KKKKKKKKEEKKKKKKKKKK']},
   {name:'달빛굴',music:'cave',cave:true,exit:[2,3,4],
-    enc:[['bamsom',8,10,30],['iseul',8,10,30],['jolljol',8,10,20],['kkam',9,10,15],['dalsom',11,11,5]],rows:[
+    enc:[['bamsom',8,10,25],['iseul',8,10,20],['jolljol',8,10,12],['kkam',9,10,8],['dalsom',11,11,4],['seongjun',8,10,25],['gwonsu',9,11,10],['seongju',9,11,10],['yeonwoo',9,11,8],['juwon',8,9,3]],rows:[
     'XXXXXXXXXXXXXXXXXXXXXX',
     'XXuuuuuXXXXXXuuuuuuuXX',
     'XuuuuuuuXXXXuuu~~~uuuX',
@@ -731,6 +762,133 @@ const DRAW={
     g.strokeStyle='#2a2018';g.beginPath();g.moveTo(-2,-23);g.quadraticCurveTo(-4,-29,-7,-29);g.moveTo(2,-23);g.quadraticCurveTo(4,-29,7,-29);g.stroke();
     E(g,-7,-29,1.2,1.2,'#ffe98a');E(g,7,-29,1.2,1.2,'#ffe98a');
     eyes(g,[-3,3],-18,1.6,bl,'#ffe98a');
+  },
+  ujin(g,t,bl){
+    const w=Math.round(Math.sin(t*4));
+    for(const x of [-13,-7,-1])E(g,x,-1,1.5,1,'#5a3a1a');
+    [[-13,4],[-7,5],[-1,5.5]].forEach(([x,r],i)=>{const y=-5-(i%2?w:0);E(g,x,y,r,r*0.9,'#b8885a','#5a3a1a');E(g,x,y+2,r*0.6,r*0.35,'#e8c8a0')});
+    E(g,-6,-11,5,3,'#5a8a3a','#2a4a2a');g.fillStyle='#2a4a2a';g.fillRect(-10,-11,8,1);
+    g.strokeStyle='#5a3a1a';g.lineWidth=1;g.beginPath();g.moveTo(5,-13);g.lineTo(3,-19);g.moveTo(9,-13);g.lineTo(11,-19);g.stroke();
+    E(g,3,-19,1.3,1.3,'#e8504f');E(g,11,-19,1.3,1.3,'#e8504f');
+    E(g,7,-8,6.5,6,'#c89868','#5a3a1a');E(g,7,-5,3.5,1.6,'#e8c8a0');
+    eyes(g,[5,9.5],-9,1.3,bl);
+  },
+  seokju(g,t,bl){
+    const f=0.55+0.45*Math.abs(Math.sin(t*5));g.translate(0,Math.sin(t*2.5)*2-3);
+    for(const s of [-1,1]){g.save();g.scale(s*f,1);
+      P(g,[1,-22,13,-36,22,-31,19,-20,8,-17],'#f6c8e8','#7a3a7a');E(g,14,-28,3.5,2.5,'#ffffff','#7a3a7a');E(g,14,-28,1.5,1,'#e8504f');
+      P(g,[1,-16,13,-15,15,-6,6,-7],'#d8a8f0','#7a3a7a');E(g,10,-11,2,1.5,'#ffe14d');g.restore()}
+    E(g,0,-15,3,9,'#4a3a5a','#1a1030');E(g,0,-26,4.5,4,'#5a4a6a','#1a1030');
+    g.strokeStyle='#1a1030';g.lineWidth=1;g.beginPath();g.moveTo(-2,-29);g.quadraticCurveTo(-5,-35,-7,-35);g.moveTo(2,-29);g.quadraticCurveTo(5,-35,7,-35);g.stroke();
+    eyes(g,[-2,2],-26,1.3,bl,'#e04a6a');
+  },
+  jinmo(g,t,bl){
+    const k=Math.sin(t*9)>0;
+    P(g,[8,-6,15,-12,12,-13,18,-21,13,-14,15,-14],'#ffe14d','#a06a10');
+    E(g,-5,-1,3,1.5,'#8a4a14');E(g,5,-1,3,1.5,'#8a4a14');
+    P(g,[-9,-14,-11,-24,-4,-17],'#ffb86a','#8a4a14');P(g,[9,-14,11,-24,4,-17],'#ffb86a','#8a4a14');
+    P(g,[-10.5,-21,-11,-24,-9,-22],'#4f7bd0');P(g,[10.5,-21,11,-24,9,-22],'#4f7bd0');
+    E(g,0,-10,10,9,'#ffb86a','#8a4a14');E(g,0,-6,6,3.5,'#ffe0b8');
+    g.fillStyle='#4f7bd0';g.fillRect(-9,-16,18,2);
+    eyes(g,[-4,4],-11,1.5,bl);if(!BACK)for(const x of [-7,7])E(g,x,-8,1.8,1.3,k?'#ffe14d':'#f0b040');
+  },
+  jinmo2(g,t,bl){
+    const k=Math.sin(t*9)>0;
+    P(g,[10,-8,20,-16,16,-18,24,-30,15,-21,18,-21,9,-12],'#ffe14d','#a06a10');
+    for(const [x,y,a] of [[-8,-24,-2],[0,-27,0],[8,-24,2]])P(g,[x-4,y+6,x+a,y-6,x+4,y+6],'#ffe14d','#a06a10');
+    E(g,-7,-1,4,2,'#7a3a10');E(g,7,-1,4,2,'#7a3a10');
+    E(g,0,-12,14,12,'#ff9a3c','#7a3a10');E(g,0,-7,8,4.5,'#ffe0b8');
+    g.fillStyle='#3a5ab0';g.fillRect(-13,-19,26,3);
+    eyes(g,[-5,5],-14,1.8,bl);if(!BACK)for(const x of [-9,9])E(g,x,-10,2.2,1.5,k?'#fff8a0':'#ffe14d');
+    if(k){g.fillStyle='#fff8a0';g.fillRect(-17,-26,1,3);g.fillRect(16,-29,1,3)}
+  },
+  seongjun(g,t,bl){
+    E(g,-5,-1,3,1.5,'#4a3a2a');E(g,5,-1,3,1.5,'#4a3a2a');
+    P(g,[-12,-2,-13,-10,-8,-16,0,-17,8,-15,13,-9,12,-2],'#a07a4a','#4a3218');
+    g.fillStyle='#6a4a2a';g.fillRect(-7,-6,3,1);g.fillRect(4,-10,1,3);g.fillRect(6,-4,3,1);
+    E(g,-5,-11,3,1.5,'#c89a6a');
+    P(g,[-9,-15,-7,-21,0,-23,7,-21,9,-15],'#e8dcb0','#7a6a40');g.fillStyle='#c8b888';g.fillRect(-10,-15,20,2);
+    eyes(g,[-4,4],-10,1.4,bl);
+  },
+  seongjun2(g,t,bl){
+    E(g,-8,-1,4,2,'#3a2a1a');E(g,8,-1,4,2,'#3a2a1a');
+    E(g,-19,-10,4,5,'#8a6a44','#3a2a14');E(g,19,-10,4,5,'#8a6a44','#3a2a14');
+    P(g,[-18,-2,-19,-14,-12,-24,-4,-29,4,-29,12,-24,19,-14,18,-2],'#8a6a44','#3a2a14');
+    for(const [x,y] of [[-14,-20],[13,-21]])P(g,[x-4,y+3,x,y-7,x+4,y+3],'#b08a5a','#3a2a14');
+    g.fillStyle='#5a4228';for(const [x,y,w,h] of [[-12,-8,4,1],[8,-12,1,4],[10,-5,4,1],[-6,-15,1,3]])g.fillRect(x,y,w,h);
+    P(g,[-8,-26,-5,-33,5,-33,8,-26],'#e8dcb0','#7a6a40');g.fillStyle='#c8b888';g.fillRect(-9,-27,18,2);
+    eyes(g,[-5,5],-19,1.6,bl,'#ffd34d');if(!BACK){g.fillStyle='#3a2a14';g.fillRect(-8,-22,5,1);g.fillRect(3,-22,5,1)}
+  },
+  minjae(g,t,bl){
+    const b=Math.sin(t*3);
+    for(const s of [-1,1])E(g,s*10,-14+b,4,2.5,'#fff0fa','#c07aa0');
+    E(g,-4,-1,2.5,1.3,'#a04a6a');E(g,4,-1,2.5,1.3,'#a04a6a');
+    E(g,0,-9,9,8.5,'#ffa8c8','#a04a6a');E(g,-3,-12,3,2,'#ffe0ec');
+    for(let i=0;i<5;i++){const a=i/5*6.28+t*0.5;E(g,6+Math.cos(a)*2.5,-18+Math.sin(a)*2.5,2,2,'#ffe14d','#c09020')}E(g,6,-18,1.5,1.5,'#ffffff');
+    eyes(g,[-3,3],-9,1.5,bl);cheek(g,[-6,6],-6);
+  },
+  minjae2(g,t,bl){
+    const b=Math.sin(t*2.5);
+    for(const s of [-1,1])E(g,s*13,-20+b,6,3.5,'#fff0fa','#c07aa0');
+    for(const x of [-12,-6,0,6,12])E(g,x,-4,4.5,5,'#ff8ab0','#a04a6a');
+    E(g,0,-14,10,11,'#ffc0d8','#a04a6a');E(g,-3,-18,3,2,'#fff0f6');
+    [[-6,'#ffe14d'],[0,'#ffffff'],[6,'#ffe14d']].forEach(([x,c])=>{for(let i=0;i<5;i++){const a=i/5*6.28;E(g,x+Math.cos(a)*2,-25+Math.sin(a)*2,1.6,1.6,c,'#c09020')}E(g,x,-25,1,1,'#f8a040')});
+    eyes(g,[-4,4],-15,1.7,bl);cheek(g,[-7,7],-11);
+  },
+  juwon(g,t,bl){
+    const w=Math.sin(t*3)*1.5;
+    g.strokeStyle='#1a2a5a';g.lineWidth=3;g.beginPath();g.moveTo(-6,-4);g.quadraticCurveTo(-16,-2,-17,-9+w);g.stroke();g.strokeStyle='#4a6ad0';g.lineWidth=1.5;g.stroke();
+    P(g,[-17,-9+w,-20,-13+w,-15,-12+w],'#ffe14d','#a08010');
+    for(const s of [-1,1])P(g,[s*5,-14,s*13,-20+w,s*12,-12],'#a8c0ff','#1a2a5a');
+    E(g,-4,-1,2.5,1.5,'#1a2a5a');E(g,4,-1,2.5,1.5,'#1a2a5a');
+    E(g,0,-8,8,7,'#4a6ad0','#1a2a5a');E(g,0,-5,5,3,'#a8c0ff');
+    E(g,0,-18,7,6,'#4a6ad0','#1a2a5a');E(g,0,-15,4,2,'#a8c0ff');
+    P(g,[-1,-23,0,-29,1,-23],'#ffe14d','#a08010');P(g,[-4,-22,-6,-27,-2,-23],'#ffe14d','#a08010');P(g,[4,-22,6,-27,2,-23],'#ffe14d','#a08010');
+    eyes(g,[-3,3],-19,1.4,bl);
+  },
+  juyong(g,t,bl){
+    const w=Math.sin(t*3)*3;
+    for(const s of [-1,1]){g.save();g.scale(s,1);P(g,[6,-26,22,-40+w,24,-30+w,20,-24+w*0.5,18,-16,8,-18],'#6a3aa8','#1a0a30');P(g,[9,-22,20,-34+w,19,-24+w*0.5],'#d0b8ff');g.restore()}
+    g.strokeStyle='#1a0a30';g.lineWidth=4;g.beginPath();g.moveTo(-8,-4);g.quadraticCurveTo(-20,-2,-22,-12);g.stroke();g.strokeStyle='#8a5ad0';g.lineWidth=2;g.stroke();
+    E(g,-6,-1,3.5,2,'#3a1a5a');E(g,6,-1,3.5,2,'#3a1a5a');
+    E(g,0,-12,11,11,'#8a5ad0','#1a0a30');E(g,0,-8,7,5,'#d0b8ff');
+    E(g,0,-27,7,6.5,'#8a5ad0','#1a0a30');
+    for(const [x,h] of [[-4,7],[0,9],[4,7]])P(g,[x-1.5,-31,x,-31-h,x+1.5,-31],'#ffe14d','#a08010');
+    eyes(g,[-3,3],-28,1.5,bl,'#ffe14d');if(!BACK){g.fillStyle='#1a0a30';g.fillRect(-2,-24,1,1);g.fillRect(1,-24,1,1)}
+  },
+  gwonsu(g,t,bl){
+    const p=Math.sin(t*6)>0?2:0;
+    E(g,-5,-1,3,1.5,'#2a5a5a');E(g,5,-1,3,1.5,'#2a5a5a');
+    E(g,0,-11,10,11,'#6ab0a8','#2a5a5a');E(g,0,-7,6,5,'#c0e0dc');
+    E(g,-12,-10,3.5,3.5,'#f0e0c8','#6a5040');E(g,12+p,-12,3.5,3.5,'#f0e0c8','#6a5040');
+    g.fillStyle='#d84a4a';g.fillRect(-8,-21,16,3);P(g,[7,-20,13,-17+p/2,12,-14+p/2,7,-18],'#d84a4a','#7a1a1a');
+    eyes(g,[-4,4],-14,1.4,bl);if(!BACK){g.fillStyle='#2a5a5a';g.fillRect(-6,-17,4,1);g.fillRect(2,-17,4,1)}
+  },
+  junseo(g,t,bl){
+    const s=Math.sin(t*2)*2;
+    for(const d of [-1,1]){g.strokeStyle='#4a2a6a';g.lineWidth=2;g.beginPath();g.moveTo(d*8,-4);g.quadraticCurveTo(d*16,-10,d*14+s*d,-22);g.stroke();
+      g.fillStyle='#a060c0';for(const k of [0.4,0.7,1])g.fillRect(Math.round(d*(8+6*k)+s*d*k)-1,Math.round(-4-18*k),2,2)}
+    E(g,-5,-1,3,1.5,'#2a6a2a');E(g,5,-1,3,1.5,'#2a6a2a');
+    E(g,0,-10,10,9,'#7ad07a','#2a6a2a');E(g,-3,-12,3,2,'#c8f0c8');
+    E(g,0,-18,13,3,'#e8c860','#8a6a20');E(g,0,-21,7,4,'#e8c860','#8a6a20');g.fillStyle='#c84a4a';g.fillRect(-7,-20,14,1);
+    eyes(g,[-4,4],-11,1.4,bl);cheek(g,[-7,7],-8);
+  },
+  seongju(g,t,bl){
+    const b=Math.sin(t*2)*0.8;
+    for(const [x,y,r] of [[-8,-3,6],[8,-3,6],[0,-4,9]])E(g,x,y,r,r*0.7,'#f0e8d8','#8a8070');
+    E(g,0,-14,10,9,'#ffffff','#8a8070');E(g,-3,-17,3.5,2.5,'#ffffff');E(g,3,-9,5,2,'#e0e8f0');
+    for(const [x,h] of [[-6,6],[-2,9],[2,9],[6,6]])P(g,[x-2,-21,x,-21-h+b,x+2,-21],'#c8ecff','#5a7a9a');
+    g.fillStyle='#4a4a5a';g.fillRect(-8,-8,16,2);g.fillRect(4,-6,3,4);
+    eyes(g,[-4,4],-15,1.4,bl,'#3a5a8a');cheek(g,[-7,7],-12);
+  },
+  yeonwoo(g,t,bl){
+    const w=Math.sin(t*3)*1.5;
+    P(g,[-14,-3,-21,-8+w,-20,-1,-14,-1],'#7ab0e0','#3a6a9a');
+    E(g,-2,-6,13,6,'#a8d8f8','#3a6a9a');E(g,-2,-3,9,2.5,'#e8f6ff');
+    E(g,7,-12,7,6.5,'#a8d8f8','#3a6a9a');
+    P(g,[2,-5,6,-1,10,-4],'#7ab0e0','#3a6a9a');
+    P(g,[5,-19,1,-22,1,-16],'#e8504f','#8a2a2a');P(g,[5,-19,9,-22,9,-16],'#e8504f','#8a2a2a');E(g,5,-19,1.2,1.2,'#f87070');
+    eyes(g,[5,10],-12,1.4,bl);if(!BACK){g.fillStyle='#3a6a9a';g.fillRect(8,-9,2,1)}cheek(g,[3,12],-9);
   },
   donggun(g,t,bl){
     const w=Math.sin(t*1.6)*1.5,gems=['#ff5a5a','#ffb03a','#ffe14d','#6cc65a','#58a8f0'];
@@ -973,14 +1131,14 @@ const NPCS=[
       pre:[['도윤','아침 산책 중이었는데 마침 잘 만났네. 한판 어때?']],lose:'이런, 산책은 그만하고 연습부터 해야겠다.',after:'버들길 풀숲은 얕아서 처음 동료를 찾기 좋아.'},
     {id:'haeun',r:11,c:16,face:'right',look:'collector',name:'하은',cls:'채집가',party:[['galdae',3],['jolljol',4]],
       pre:[['하은','잠깐! 방금 네 발소리에 기명이 달아났잖아. 책임져.']],lose:'…좋아, 실력은 인정할게.',after:'인연실은 상대가 지쳤을 때 던져야 잘 묶여. HP를 충분히 깎은 다음에.'},
-    {id:'minjae',r:17,c:34,face:'left',look:'walker',name:'민재',cls:'소풍객',party:[['galdae',4],['jolljol',5]],
-      pre:[['민재','이 샛길은 아는 사람만 아는데. 찾아낸 기념으로 한판 하자.']],lose:'샛길까지 찾아오는 사람은 역시 다르네.',after:'언덕은 뛰어내릴 수만 있고 거꾸로 오를 수는 없어. 돌아갈 길을 잘 봐 둬.'} ],
+    {id:'minjae',r:17,c:34,face:'left',look:'walker',name:'지호',cls:'소풍객',party:[['ujin',4],['jinmo',5]],
+      pre:[['지호','이 샛길은 아는 사람만 아는데. 찾아낸 기념으로 한판 하자.']],lose:'샛길까지 찾아오는 사람은 역시 다르네.',after:'언덕은 뛰어내릴 수만 있고 거꾸로 오를 수는 없어. 돌아갈 길을 잘 봐 둬.'} ],
   [ {id:'jeongwoo',r:16,c:20,face:'left',look:'hiker',name:'정우',cls:'등산객',party:[['iseul',6],['bamsom',7]],
       pre:[['정우','안개 속에선 소리로 길을 찾지. 네 발소리, 꽤 자신 있어 보이던데.']],lose:'하하, 단단한 녀석들이었는데 말이야.',after:'안개 낀 숲의 동훈은 커서 고스트 타입이 된대. 그러면 노말 기술은 아예 안 통하지.'},
     {id:'seojin',r:2,c:17,face:'down',look:'rival',name:'서진',cls:'기록원 지망생',if:()=>!G.F.beat.seojin,party:()=>[[G.F.rivalSp,7],['bamsom',6]],
       pre:[['서진','늦었네. 기다리다 지칠 뻔했어.'],['서진','여기까지 오면서 얼마나 컸는지 보자.']],lose:'…그래, 인정할게. 이번엔 네가 위야.',
       onWin:()=>say(['서진','난 포구에 먼저 가 있을게. 다음엔 안 져.'],'서진은 안개 너머로 먼저 달려갔다.')},
-    {id:'eunho',r:11,c:31,face:'down',look:'hiker',name:'은호',cls:'탐험가',party:[['iseul',7],['kkam',8]],
+    {id:'eunho',r:11,c:31,face:'down',look:'hiker',name:'은호',cls:'탐험가',party:[['gwonsu',7],['kkam',8]],
       pre:[['은호','안개 낀 샛길을 일부러 걷는 사람은 둘 중 하나야. 길을 잃었거나, 싸움을 찾거나.']],lose:'…길을 잃은 쪽은 아니었군.',after:'숲 서쪽은 미로처럼 얽혀 있어. 막다른 길 끝에 누가 떨어뜨린 물건이 있다던데.'} ],
   [ {id:'seojin2',r:12,c:20,look:'rival',name:'서진',if:()=>G.F.beat.seojin,talk:()=>say(G.F.badge?['서진','등대 불빛, 여기서도 잘 보여. …축하해. 다음 시험은 내가 먼저 붙을 거야.']:['서진','하람 씨는 등대 꼭대기에 있어. 견습생 둘이 계단을 지키고 있으니까 각오해 둬.'])},
     {id:'shell',r:10,c:31,look:'kid',name:'바닷가 아이',lines:[['바닷가 아이','썰물 때면 모래밭 끝까지 걸어갈 수 있어. 가끔 반짝이는 게 떨어져 있다?']]},
@@ -995,7 +1153,7 @@ const NPCS=[
     {id:'haram',r:2,c:8,face:'down',look:'keeper',name:'하람',cls:'등대지기',leader:true,party:[['galdae',11],['jolljol',11],['deungbul',12]],money:1200,
       pre:[['하람','등대는 바다를 비추려고 있는 게 아니야. 돌아올 사람에게 길을 알려 주려고 있지.'],['하람','네 동료들이 너를 믿고 따르는지 보여 줘. 그걸 보고 불을 켤지 정하겠다.']],
       lose:'충분해. 그 녀석들, 끝까지 네 쪽을 보고 있더군.',after:'언제든 다시 와. 등대는 이제 꺼지지 않을 테니까.',onWin:leaderWon} ],
-  [ {id:'daon',r:3,c:12,face:'left',look:'hiker',name:'다온',cls:'동굴 탐험가',party:[['iseul',10],['bamsom',10],['jolljol',11]],
+  [ {id:'daon',r:3,c:12,face:'left',look:'hiker',name:'다온',cls:'동굴 탐험가',party:[['seongjun',10],['seongju',10],['iseul',11]],
       pre:[['다온','불빛도 없이 여기까지 들어왔어? 담력 하나는 인정. 실력도 볼까.']],lose:'어둠 속에서도 동료 얼굴은 잘 보이나 보네.',
       after:'굴 안에선 어디서든 생물이 튀어나와. 풀숲이 없다고 방심하지 마.'} ],
 ];
