@@ -63,7 +63,7 @@ function mascot(mood = 'happy', size = 96) {
 /* ════════ 저장 상태 ════════ */
 const KEY = 'ilsin.v1';
 const HEART_MAX = 5, HEART_MS = 20 * 60 * 1000;
-const DEF = { v: 1, xp: 0, days: {}, streak: 0, last: null, best: 0, done: {}, hearts: HEART_MAX, heartAt: 0, wrong: {}, quiz: [], settings: { sound: true, vib: true, tts: true, inf: false, all: false, goal: 20, theme: 'system' } };
+const DEF = { v: 1, xp: 0, days: {}, streak: 0, last: null, best: 0, done: {}, hearts: HEART_MAX, heartAt: 0, wrong: {}, quiz: [], subject: 'hanmun', settings: { sound: true, vib: true, tts: true, inf: false, all: false, goal: 20, theme: 'system' } };
 let S = load();
 function load() {
   try {
@@ -224,7 +224,7 @@ const X = {
     return {
       type: 'choice', key: c.k, item: c, title: '이 한자의 훈과 음을 고르세요', layout: 'grid2',
       prompt: `<div class="bighz hz">${c.ch}</div>`,
-      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun) })), ans: c.hun, answerText: c.hun, say: c.hun, exp: ''
+      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: c.hun, say: c.hun, exp: ''
     };
   },
   pickHanja(c) {
@@ -233,7 +233,7 @@ const X = {
     return {
       type: 'choice', key: c.k, item: c, title: `'${c.hun}'에 알맞은 한자를 고르세요`, layout: 'grid2 hzopts',
       prompt: `<div class="bubble">${esc(c.hun)}</div>`,
-      opts: shuffle([c, ...ds]).map(x => ({ v: x.ch, html: `<span class="hz">${x.ch}</span>` })), ans: c.ch, answerText: `${c.ch} (${c.hun})`, say: c.hun
+      opts: shuffle([c, ...ds]).map(x => ({ v: x.ch, html: `<span class="hz">${x.ch}</span>`, d: x.hun })), ans: c.ch, answerText: `${c.ch} (${c.hun})`, say: c.hun
     };
   },
   charMatch(chars, title) {
@@ -244,13 +244,13 @@ const X = {
   },
   pairs(p) { return { type: 'match', key: p.k, item: p, title: p.t, pairs: shuffle(p.p).slice(0, 5), hz: p.hz }; },
   wordEum(w) {
-    let ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.r.length === w.r.length && x.r !== w.r, x => x.r).map(x => x.r);
-    if (w.h[0] === '不') { const alt = (w.r[0] === '부' ? '불' : '부') + w.r.slice(1); ds = [alt, ...ds.filter(d => d !== alt)].slice(0, 3); }
+    let ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.r.length === w.r.length && x.r !== w.r, x => x.r).map(x => ({ v: x.r, d: `${x.h}의 독음` }));
+    if (w.h[0] === '不') { const alt = (w.r[0] === '부' ? '불' : '부') + w.r.slice(1); ds = [{ v: alt, d: '不은 뒤 글자의 첫소리가 ㄷ·ㅈ이면 "부", 그 밖에는 "불"로 읽어요' }, ...ds.filter(d => d.v !== alt)].slice(0, 3); }
     let guard = 0;
-    while (ds.length < 3 && guard++ < 50) { const f = fakeReading(w.r); if (f !== w.r && !ds.includes(f)) ds.push(f); }
+    while (ds.length < 3 && guard++ < 50) { const f = fakeReading(w.r); if (f !== w.r && !ds.some(d => d.v === f)) ds.push({ v: f, d: '' }); }
     return {
       type: 'choice', key: w.k, item: w, title: '이 어휘의 독음을 고르세요', layout: 'grid2',
-      prompt: `<div class="bighz hz word">${w.h}</div>`, opts: shuffle([w.r, ...ds]).map(r => ({ v: r, html: esc(r) })), ans: w.r, answerText: w.r, say: w.r, exp: expOf(w)
+      prompt: `<div class="bighz hz word">${w.h}</div>`, opts: shuffle([{ v: w.r, d: '' }, ...ds]).map(o => ({ v: o.v, html: esc(o.v), d: o.d })), ans: w.r, answerText: w.r, say: w.r, exp: expOf(w)
     };
   },
   wordMean(w) {
@@ -259,7 +259,7 @@ const X = {
     return {
       type: 'choice', key: w.k, item: w, title: '이 어휘의 뜻을 고르세요', layout: 'list',
       prompt: `<div class="midhz hz">${w.h}</div><div class="rd">${esc(w.r)}</div>`,
-      opts: shuffle([w, ...ds]).map(x => ({ v: x.m, html: esc(x.m) })), ans: w.m, answerText: w.m, say: w.r, exp: expOf(w)
+      opts: shuffle([w, ...ds]).map(x => ({ v: x.m, html: esc(x.m), d: `${x.h}(${x.r})의 뜻` })), ans: w.m, answerText: w.m, say: w.r, exp: expOf(w)
     };
   },
   meanWord(w) {
@@ -270,7 +270,7 @@ const X = {
     return {
       type: 'choice', key: w.k, item: w, title: '뜻에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
       prompt: `<div class="bubble">${esc(w.m)}</div>`,
-      opts: shuffle([w, ...all]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
+      opts: shuffle([w, ...all]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
   },
   buildWord(w) {
@@ -289,7 +289,7 @@ const X = {
     return {
       type: 'choice', key: w.k, item: w, title: '빈칸에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
       prompt: `<div class="cloze">${esc(w.ex).replace('○', '<span class="blank"></span>')}</div>`,
-      opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
+      opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
   },
   typeEum(item) {
@@ -306,7 +306,7 @@ const X = {
     return {
       type: 'choice', key: w.k, item: w, title: '들리는 어휘를 한자로 고르세요', layout: 'grid2 hzopts', listen: w.r,
       prompt: `<div class="listen"><button class="spk big" data-say="${esc(w.r)}" aria-label="다시 듣기">${icon('speaker', 40)}</button><button class="spk slow" data-say="${esc(w.r)}" data-slow="1" aria-label="천천히 듣기">천천히</button></div>`,
-      opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
+      opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
   },
   sentEum(s) {
@@ -343,7 +343,7 @@ const X = {
     return {
       type: 'choice', key: s.k, item: s, title: '알맞은 풀이를 고르세요', layout: 'list',
       prompt: `<div class="sentence">${hzHtml(s.h, { hints: s.c })}</div>${readLine(s)}`,
-      opts: shuffle([s, ...ds]).map(x => ({ v: x.m, html: esc(x.m) })), ans: s.m, answerText: s.m, say: readingToe(s), exp: s.note || ''
+      opts: shuffle([s, ...ds]).map(x => ({ v: x.m, html: esc(x.m), d: `${x.h}의 풀이` })), ans: s.m, answerText: s.m, say: readingToe(s), exp: s.note || ''
     };
   },
   ctxChar(s, idx) {
@@ -355,7 +355,7 @@ const X = {
     return {
       type: 'choice', key: s.k, item: s, title: '표시한 한자의 훈과 음을 고르세요', layout: 'grid2',
       prompt: `<div class="sentence">${hzHtml(s.h, { mark: i })}</div>`,
-      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun) })), ans: c.hun, answerText: `${c.ch} ${c.hun}`, say: c.hun, exp: expOf(s)
+      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: `${c.ch} ${c.hun}`, say: c.hun, exp: expOf(s)
     };
   },
   order(s) {
@@ -370,7 +370,7 @@ const X = {
   quiz(q) {
     return {
       type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : (q.w.length < 3 ? 'grid2' : 'list'), quiz: true,
-      prompt: '', opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : esc(v) })),
+      prompt: '', opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : esc(v), d: describe(v) })),
       ans: q.a, answerText: q.a, say: '', exp: q.exp || ''
     };
   },
@@ -382,7 +382,7 @@ const X = {
     return {
       type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : 'list',
       prompt: q.p ? `<div class="qbox">${hzWrap(q.p)}</div>` : '',
-      opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : hzWrap(v) })),
+      opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : hzWrap(v), d: describe(v) })),
       ans: q.a, answerText: q.a, say: '', exp: q.exp || ''
     };
   },
@@ -391,7 +391,7 @@ const X = {
     return {
       type: 'choice', key: z.k, item: z, title: '빈칸에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
       prompt: `<div class="cloze">${esc(z.s).replace('○', '<span class="blank"></span>')}</div>`,
-      opts: shuffle([z.a, ...z.w]).map(v => ({ v, html: `<span class="hz">${v}</span>` })), ans: z.a,
+      opts: shuffle([z.a, ...z.w]).map(v => ({ v, html: `<span class="hz">${v}</span>`, d: describe(v) })), ans: z.a,
       answerText: WORDS[z.a] ? `${z.a} (${WORDS[z.a].r})` : z.a, say: WORDS[z.a] ? WORDS[z.a].r : '',
       exp: z.exp || ws.map(w => `${w.h}(${w.r}): ${w.m}`).join(' / ')
     };
@@ -606,7 +606,7 @@ function footState(state, res) {
     const ok = state === 'ok';
     fb.innerHTML = `<div class="fbhead">${icon(ok ? 'check' : 'x', 22, 'fbicon')}<b>${ok ? pick(PRAISE) : '아쉬워요'}</b>
       ${CUR.say ? `<button class="spk mini" data-say="${esc(CUR.say)}" aria-label="읽어 주기">${icon('speaker', 18)}</button>` : ''}</div>
-      ${ok ? '' : `<div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>`}
+      ${ok ? '' : mineLine(mineInfo(CUR)) + `<div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>`}
       ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}`;
     btn.textContent = '계속'; btn.disabled = false; btn.className = 'btn wide ' + (ok ? '' : 'red');
   }
@@ -723,7 +723,8 @@ function finishEx(ok) {
     if (LS.mode === 'practice' && S.wrong[e.key]) { if (--S.wrong[e.key] <= 0) delete S.wrong[e.key]; }
   } else {
     LS.wrong++; LS.combo = 0; sfx.wrong(); buzz(90);
-    $('.lin', box).classList.add('shake'); setTimeout(() => $('.lin', box).classList.remove('shake'), 400);
+    // 'enter'를 먼저 빼야 흔들기가 끝난 뒤 들어오는 애니메이션이 다시 재생되지 않는다
+    const lin = $('.lin', box); lin.classList.remove('enter'); lin.classList.add('shake'); setTimeout(() => lin.classList.remove('shake'), 400);
     if (e.key) { S.wrong[e.key] = (S.wrong[e.key] || 0) + 1; LS.missed.add(e.key); }
     if (LS.useHearts) { if (S.hearts >= HEART_MAX) S.heartAt = Date.now(); S.hearts = Math.max(0, S.hearts - 1); setHeartsUI(true); }
     const again = Object.assign({}, e, { retry: true });
@@ -797,6 +798,22 @@ function answerOf(e) {
   if (e.type === 'type') return $('input.typein', lessonEl()).value.trim();
   return '';
 }
+// 내가 고른 답과, 그 답이 실제로 무엇인지(다른 한자의 훈음, 다른 어휘의 뜻 등)
+function mineInfo(e) {
+  let d = '';
+  if (e.type === 'choice' && e.state.sel != null) { const o = e.opts[e.state.sel]; d = o.d != null ? o.d : describe(o.v); }
+  return { mine: answerOf(e) || '(답하지 않음)', d };
+}
+const mineLine = (mi, cls = 'fbans mine') => `<div class="${cls}"><span>내 답</span> ${hzWrap(mi.mine)}${mi.d ? `<em>${hzWrap(mi.d)}</em>` : ''}</div>`;
+// 보기 값이 무엇인지 찾아 설명: 설명 사전(GLOSS) → 어휘 독음·뜻 → 한자 훈음 → 문장 독음·풀이
+function describe(v) {
+  v = String(v).trim();
+  if (typeof GLOSS !== 'undefined' && GLOSS[v]) return GLOSS[v];
+  const w = WORDS[v]; if (w) return `${w.r} · ${w.m}`;
+  if (v.length === 1 && isHz(v)) { const c = POOL.chars.find(x => x.ch === v); return c ? c.hun : ''; }
+  const s = POOL.sents.find(x => hzOf(x.h).join('') === v); if (s) return `${reading(s)} · ${s.m}`;
+  return '';
+}
 function freshEx(e) {
   const c = Object.assign({}, e, { retry: false });
   if (c.opts) c.opts = shuffle(c.opts);
@@ -808,7 +825,8 @@ function quizRecord(skip) {
   if (!LS || !CUR || CUR.state.done) return;
   const e = CUR; e.state.done = true;
   const ok = !skip && judge();
-  LS.log.push({ e, ok, mine: skip ? '모르겠어요' : answerOf(e) });
+  const mi = skip ? { mine: '모르겠어요', d: '' } : mineInfo(e);
+  LS.log.push({ e, ok, mine: mi.mine, d: mi.d });
   if (ok) LS.right++; else { LS.wrong++; if (e.key) S.wrong[e.key] = (S.wrong[e.key] || 0) + 1; }
   LS.solved++; save(); sfx.tap(); buzz(10);
   LS.i++;
@@ -819,7 +837,7 @@ function qReview(l, i) {
   return `<div class="qr ${l.ok ? 'ok' : 'no'}">
     <div class="qrh"><span class="qmark">${l.ok ? '○' : '✕'}</span><span class="qno">${i + 1}.</span><b>${hzWrap(e.title)}</b></div>
     ${e.prompt ? `<div class="qrp">${e.prompt}</div>` : ''}
-    <div class="qra"><span>내 답</span>${hzWrap(l.mine || '(답하지 않음)')}</div>
+    ${mineLine({ mine: l.mine || '(답하지 않음)', d: l.ok ? '' : l.d }, 'qra')}
     ${l.ok ? '' : `<div class="qra right"><span>정답</span>${hzWrap(e.answerText)}</div>`}
     ${e.exp ? `<div class="qre">${hzWrap(e.exp)}</div>` : ''}</div>`;
 }
@@ -940,14 +958,35 @@ function confetti() {
   lessonEl().appendChild(host); setTimeout(() => host.remove(), 3200);
 }
 
-/* ════════ 상단 막대 ════════ */
+/* ════════ 상단 막대 · 과목 탭 ════════ */
+const curSub = () => SUBJECTS.find(s => s.id === S.subject) || SUBJECTS[0];
+const subMark = s => `<span class="smk${isHz(s.mark) ? ' hz' : ''}">${esc(s.mark)}</span>`;
 function renderTop() {
   syncHearts();
-  const st = streakNow();
-  $('#top').innerHTML = `<div class="brand"><span class="seal-mini hz">日新</span></div>
+  const st = streakNow(), cur = curSub();
+  const top = $('#top');
+  top.innerHTML = `<div class="toprow"><div class="brand"><span class="seal-mini hz">日新</span></div>
     <button class="stat flame ${st ? '' : 'off'}" data-go="profile" aria-label="연속 학습 ${st}일">${icon('flame', 24)}<b>${st}</b></button>
     <button class="stat xp" data-go="profile" aria-label="총 ${S.xp} XP">${icon('bolt', 24)}<b>${S.xp}</b></button>
-    <button class="stat heart" data-act="hearts" aria-label="하트">${icon('heart', 24)}<b>${S.settings.inf ? '∞' : S.hearts}</b></button>`;
+    <button class="stat heart" data-act="hearts" aria-label="하트">${icon('heart', 24)}<b>${S.settings.inf ? '∞' : S.hearts}</b></button></div>
+    ${TAB === 'profile' ? '' : `<div class="subjects" role="tablist" aria-label="과목">${SUBJECTS.map(s => `<button role="tab" aria-selected="${s === cur}"
+      class="subj c-${s.color}${s === cur ? ' on' : ''}${s.ready ? '' : ' soon'}" data-subj="${s.id}">${subMark(s)}${esc(s.name)}</button>`).join('')}</div>`}`;
+  const on = $('.subj.on', top); if (on) on.parentElement.scrollLeft = on.offsetLeft - 60;
+  document.documentElement.style.setProperty('--toph', top.offsetHeight + 'px');
+}
+// 아직 내용이 없는 과목: 탭만 열어 두고 '준비 중' 화면
+const josa = (w, a, b) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b; };
+function renderSoon(sub, tab) {
+  const what = { learn: '레슨', quiz: '퀴즈', notes: '요약', review: '복습' }[tab] || '내용';
+  return `<div class="page soonpage c-${sub.color}">
+    <div class="soonmark${isHz(sub.mark) ? ' hz' : ''}">${esc(sub.mark)}</div>
+    <h1>${esc(sub.name)}</h1><span class="soonbadge">준비 중</span>
+    <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 추가되면 여기에서 열려요.<br>
+      교과서나 학습지, 공책 사진으로 한문처럼 레슨 · 퀴즈 · 요약 · 복습을 만들 수 있어요.</p>
+    ${tab === 'learn' ? `<div class="soonpath">${[0, 1, 2, 3, 4].map(i => `<div class="nrow" style="--x:${Math.round(Math.sin(i * 0.95) * 64)}px"><span class="node locked">${icon('lock', 30)}</span></div>`).join('')}</div>`
+      : `<div class="soonmascot">${mascot('happy', 84)}</div>`}
+    <button class="btn wide ghost" data-subj="hanmun">한문 공부하러 가기</button>
+  </div>`;
 }
 
 /* ════════ 학습(길) 화면 ════════ */
@@ -1103,13 +1142,20 @@ function renderProfile() {
   const max = Math.max(S.settings.goal, ...week.map(k => S.days[k] || 0));
   const wd = ['일', '월', '화', '수', '목', '금', '토'];
   const tg = (k, label, desc) => `<label class="set"><span><b>${label}</b>${desc ? `<small>${desc}</small>` : ''}</span><input type="checkbox" data-set="${k}" ${S.settings[k] ? 'checked' : ''}><i class="sw"></i></label>`;
-  return `<div class="page profile"><div class="phead">${mascot('happy', 80)}<div><h1>나의 학습</h1><p>2학년 2학기 한문 · 일일신</p></div></div>
+  const subRows = SUBJECTS.map(s => {
+    const ls = s.id === 'hanmun' ? LESSONS : [], dn = ls.filter(L => S.done[L.id]).length;
+    return `<button class="sprog c-${s.color}" data-subj-go="${s.id}">${subMark(s)}<b>${esc(s.name)}</b>
+      ${s.ready && ls.length ? `<span class="gbar"><i style="width:${Math.round(dn / ls.length * 100)}%"></i></span><small>${dn}/${ls.length}</small>` : '<span class="soonbadge small">준비 중</span>'}</button>`;
+  }).join('');
+  return `<div class="page profile"><div class="phead">${mascot('happy', 80)}<div><h1>나의 학습</h1><p>2학년 2학기 · 일일신</p></div></div>
     <div class="pstats">
       <div class="ps flame">${icon('flame', 26)}<b>${streakNow()}</b><small>연속 학습일</small></div>
       <div class="ps xp">${icon('bolt', 26)}<b>${S.xp}</b><small>총 XP</small></div>
       <div class="ps jade">${icon('check', 26)}<b>${doneN}<em>/${LESSONS.length}</em></b><small>끝낸 레슨</small></div>
       <div class="ps violet"><span class="hz pshz">字</span><b>${hzN}</b><small>익힌 한자</small></div>
     </div>
+    <h2 class="sect">과목별 진도</h2>
+    <div class="sprogs">${subRows}</div>
     <h2 class="sect">이번 주 XP</h2>
     <div class="chart" role="img" aria-label="최근 7일 XP">${week.map(k => { const v = S.days[k] || 0, d = new Date(k.replace(/-/g, '/')); return `<div class="bar ${k === t ? 'today' : ''}"><em>${v || ''}</em><i style="height:${Math.round(v / max * 100)}%"></i><small>${wd[d.getDay()]}</small></div>`; }).join('')}
       <span class="goalline" style="bottom:calc(22px + ${S.settings.goal / max} * (100% - 44px))"><small>목표</small></span></div>
@@ -1127,7 +1173,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="ilsin.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">일일신(日日新) v1.1 · 苟日新 日日新 又日新</p></div>`;
+    <p class="about">일일신(日日新) v1.2 · 苟日新 日日新 又日新</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1161,9 +1207,11 @@ function show(tab, opts = {}) {
   TAB = tab;
   closePop();
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  const v = $('#view');
-  v.innerHTML = tab === 'learn' ? renderLearn() : tab === 'review' ? renderReview() : tab === 'notes' ? renderNotes() : tab === 'quiz' ? renderQuiz() : renderProfile();
-  if (tab === 'learn') requestAnimationFrame(() => scrollToCurrent(false));
+  renderTop();
+  const v = $('#view'), sub = curSub();
+  v.innerHTML = tab === 'profile' ? renderProfile() : !sub.ready ? renderSoon(sub, tab)
+    : tab === 'learn' ? renderLearn() : tab === 'review' ? renderReview() : tab === 'notes' ? renderNotes() : renderQuiz();
+  if (tab === 'learn' && sub.ready) requestAnimationFrame(() => scrollToCurrent(false));
   else if (opts.unit) requestAnimationFrame(() => { const s = document.getElementById(opts.unit) || $(`.nunit.c-${UNITS.find(u => u.id === opts.unit).color}`); if (s) s.scrollIntoView(); });
   else window.scrollTo(0, 0);
 }
@@ -1191,6 +1239,9 @@ document.addEventListener('click', ev => {
   const qn = t.closest('[data-qn]'); if (qn) { sfx.tap(); QUIZ_N = +qn.dataset.qn; const y = scrollY; show('quiz'); window.scrollTo(0, y); return; }
   if (t.closest('[data-qstart]')) { startQuiz(QUIZ_U, QUIZ_N); return; }
   const qz = t.closest('[data-quizunit]'); if (qz) { QUIZ_U = qz.dataset.quizunit; TAB = 'quiz'; startQuiz(QUIZ_U, 10); return; }
+  const sg = t.closest('[data-subj-go]'); if (sg) { sfx.tap(); S.subject = sg.dataset.subjGo; save(); show('learn'); return; }
+  const sj = t.closest('[data-subj]');
+  if (sj) { sfx.tap(); if (S.subject !== sj.dataset.subj) { S.subject = sj.dataset.subj; save(); show(TAB); } return; }
   const pr = t.closest('[data-practice]'); if (pr) { startPractice(pr.dataset.practice); return; }
   const ls = t.closest('[data-lesson]'); if (ls) { startNode(LESSONS.find(L => L.id === ls.dataset.lesson)); return; }
   const say = t.closest('[data-say]'); if (say) { tts.say(say.dataset.say); say.classList.remove('pop'); void say.offsetWidth; say.classList.add('pop'); }
