@@ -36,6 +36,7 @@ const ICON = {
   user: '<circle cx="12" cy="8" r="4.2" fill="currentColor"/><path fill="currentColor" d="M3.8 20.2c.8-4 4.2-6.4 8.2-6.4s7.4 2.4 8.2 6.4c.1.5-.3.8-.8.8H4.6c-.5 0-.9-.3-.8-.8z"/>',
   target: '<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
   bulb: '<path fill="currentColor" d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.6.5.9 1.1.9 1.8v.5h6V16c0-.7.3-1.3.9-1.8A6.5 6.5 0 0 0 12 2.5zM9 18h6v1.3c0 1.2-1 2.2-2.2 2.2h-1.6C10 21.5 9 20.5 9 19.3z"/>',
+  skip: '<path fill="currentColor" d="M5 6.2v11.6c0 .8.9 1.3 1.6.8L13 13.9v3.9c0 .8.9 1.3 1.6.8l7.2-5.8c.5-.4.5-1.2 0-1.6l-7.2-5.8c-.7-.5-1.6 0-1.6.8v3.9L6.6 5.4C5.9 4.9 5 5.4 5 6.2z"/>',
   quiz: '<rect x="5" y="4.5" width="14" height="17" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.5" fill="currentColor"/><path d="m8.5 13.5 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="m15.5 15.5 5 5"/>',
 };
@@ -217,6 +218,7 @@ function expOf(item) {
   return item.exp || '';
 }
 
+const pairText = pairs => pairs.map(p => `${p[0]} – ${p[1]}`).join(' · ');
 const X = {
   pickHunum(c) {
     const ds = distract(3, prefer(POOL.chars, c.u), x => x.ch !== c.ch && x.hun !== c.hun, x => x.hun);
@@ -224,7 +226,7 @@ const X = {
     return {
       type: 'choice', key: c.k, item: c, title: '이 한자의 훈과 음을 고르세요', layout: 'grid2',
       prompt: `<div class="bighz hz">${c.ch}</div>`,
-      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: c.hun, say: c.hun, exp: ''
+      opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: `${c.ch} ${c.hun}`, say: c.hun, exp: ''
     };
   },
   pickHanja(c) {
@@ -240,9 +242,10 @@ const X = {
     const cs = distract(5, shuffle(chars), () => true, x => x.ch);
     const uniqHun = distract(5, cs, () => true, x => x.hun);
     if (uniqHun.length < 3) return null;
-    return { type: 'match', key: 'm:' + uniqHun.map(c => c.ch).join(''), title: title || '한자와 훈음을 짝지으세요', pairs: uniqHun.map(c => [c.ch, c.hun]), hz: [1, 0] };
+    const pairs = uniqHun.map(c => [c.ch, c.hun]);
+    return { type: 'match', key: 'm:' + uniqHun.map(c => c.ch).join(''), title: title || '한자와 훈음을 짝지으세요', pairs, hz: [1, 0], answerText: pairText(pairs) };
   },
-  pairs(p) { return { type: 'match', key: p.k, item: p, title: p.t, pairs: shuffle(p.p).slice(0, 5), hz: p.hz }; },
+  pairs(p) { const pairs = shuffle(p.p).slice(0, 5); return { type: 'match', key: p.k, item: p, title: p.t, pairs, hz: p.hz, answerText: pairText(pairs) }; },
   wordEum(w) {
     let ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.r.length === w.r.length && x.r !== w.r, x => x.r).map(x => ({ v: x.r, d: `${x.h}의 독음` }));
     if (w.h[0] === '不') { const alt = (w.r[0] === '부' ? '불' : '부') + w.r.slice(1); ds = [{ v: alt, d: '不은 뒤 글자의 첫소리가 ㄷ·ㅈ이면 "부", 그 밖에는 "불"로 읽어요' }, ...ds.filter(d => d.v !== alt)].slice(0, 3); }
@@ -574,11 +577,11 @@ function startLesson(cfg) {
   el.innerHTML = `<div class="lhead"><button class="iconbtn" id="lquit" aria-label="그만하기">${icon('x', 26)}</button>
     <div class="pbar" role="progressbar" aria-label="진행도"><i></i><span class="combo"></span></div>
     ${quiz ? `<div class="qcount"><b>1</b>/${LS.total}</div>` : `<div class="lhearts ${useHearts ? '' : 'inf'}">${icon('heart', 24)}<b>${useHearts ? S.hearts : '∞'}</b></div>`}</div>
-    <div class="lbody"><div class="lin"></div></div><div class="lfoot"><div class="fb"></div><div class="fbtns">${quiz ? '<button class="btn ghost" id="lskip">모르겠어요</button>' : ''}<button class="btn wide" id="lcheck" disabled>확인</button></div></div>
+    <div class="lbody"><div class="lin"></div></div><div class="lfoot"><div class="fb"></div><div class="fbtns"><button class="btn ghost" id="lskip">건너뛰기</button><button class="btn wide" id="lcheck" disabled>확인</button></div></div>
     <div class="tip" hidden></div>`;
   $('#lquit').onclick = () => confirmQuit();
   $('#lcheck').onclick = () => onMain();
-  if (quiz) $('#lskip').onclick = () => quizRecord(true);
+  $('#lskip').onclick = () => quiz ? quizRecord(true) : skipEx();
   renderEx();
 }
 function setProgress(anim) {
@@ -595,7 +598,9 @@ function setHeartsUI(lost) {
 }
 function footState(state, res) {
   const foot = $('.lfoot', lessonEl()), btn = $('#lcheck'), fb = $('.fb', foot);
-  foot.className = 'lfoot' + (state === 'ok' || state === 'no' ? ' ' + state : ''); fb.innerHTML = '';
+  foot.className = 'lfoot' + (['ok', 'no', 'skip'].includes(state) ? ' ' + state : ''); fb.innerHTML = '';
+  // 건너뛰기는 문제를 풀고 있을 때만 (배우기 카드, 채점 뒤에는 숨김)
+  const skip = $('#lskip'); if (skip) skip.hidden = !['idle', 'ready', 'match'].includes(state);
   if (state === 'idle' || state === 'ready') {
     btn.textContent = LS.mode === 'quiz' ? (LS.i >= LS.q.length - 1 ? '제출하기' : '다음') : '확인';
     btn.disabled = state === 'idle'; btn.className = 'btn wide';
@@ -609,6 +614,14 @@ function footState(state, res) {
       ${ok ? '' : mineLine(mineInfo(CUR)) + `<div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>`}
       ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}`;
     btn.textContent = '계속'; btn.disabled = false; btn.className = 'btn wide ' + (ok ? '' : 'red');
+  }
+  if (state === 'skip') {
+    fb.innerHTML = `<div class="fbhead">${icon('skip', 22, 'fbicon')}<b>건너뛰었어요</b>
+      ${CUR.say ? `<button class="spk mini" data-say="${esc(CUR.say)}" aria-label="읽어 주기">${icon('speaker', 18)}</button>` : ''}</div>
+      <div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>
+      ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}
+      <div class="fbexp">이 문제는 레슨 끝에 다시 나와요.</div>`;
+    btn.textContent = '계속'; btn.disabled = false; btn.className = 'btn wide sky';
   }
 }
 function renderEx() {
@@ -704,7 +717,7 @@ function judge() {
 function onMain() {
   if (!LS || !CUR) return;
   const foot = $('.lfoot', lessonEl());
-  if (foot.classList.contains('ok') || foot.classList.contains('no')) return nextEx();
+  if (foot.classList.contains('ok') || foot.classList.contains('no') || foot.classList.contains('skip')) return nextEx();
   if (CUR.type === 'teach') { LS.solved++; return nextEx(); }
   if (CUR.type === 'type' && !$('input.typein', lessonEl()).value.trim()) return;
   if (CUR.type === 'choice' && CUR.state.sel == null) return;
@@ -736,6 +749,22 @@ function finishEx(ok) {
   setProgress(ok);
   footState(ok ? 'ok' : 'no', { exp: e.exp });
   if (e.say && e.type !== 'match') setTimeout(() => tts.say(e.say), ok ? 380 : 500);
+}
+// 모르는 문제 건너뛰기: 정답을 보여 주고, 하트는 그대로 두되 레슨 끝에 다시 내고 오답 노트에 넣는다
+function skipEx() {
+  if (!LS || !CUR || CUR.state.done || CUR.type === 'teach') return;
+  const e = CUR, box = lessonEl(); e.state.done = true;
+  hideTip();
+  if (e.type === 'choice') $$('.opt', box).forEach(o => { if (e.opts[+o.dataset.i].v === e.ans) o.classList.add('right'); o.disabled = true; });
+  if (e.type === 'tiles') $$('.tile', box).forEach(b => b.disabled = true);
+  if (e.type === 'type') { const inp = $('input.typein', box); inp.readOnly = true; inp.blur(); }
+  if (e.type === 'match') $$('.mt', box).forEach(b => b.disabled = true);
+  LS.wrong++; LS.combo = 0; LS.skipped = (LS.skipped || 0) + 1;
+  if (e.key) { S.wrong[e.key] = (S.wrong[e.key] || 0) + 1; LS.missed.add(e.key); }
+  LS.q.push(freshEx(e));
+  save(); sfx.tap(); buzz(15);
+  footState('skip', { exp: e.exp });
+  if (e.say && e.type !== 'match') setTimeout(() => tts.say(e.say), 400);
 }
 function nextEx() {
   if (LS.useHearts && S.hearts <= 0) { noHearts(true); return; }
@@ -825,7 +854,7 @@ function quizRecord(skip) {
   if (!LS || !CUR || CUR.state.done) return;
   const e = CUR; e.state.done = true;
   const ok = !skip && judge();
-  const mi = skip ? { mine: '모르겠어요', d: '' } : mineInfo(e);
+  const mi = skip ? { mine: '(건너뜀)', d: '' } : mineInfo(e);
   LS.log.push({ e, ok, mine: mi.mine, d: mi.d });
   if (ok) LS.right++; else { LS.wrong++; if (e.key) S.wrong[e.key] = (S.wrong[e.key] || 0) + 1; }
   LS.solved++; save(); sfx.tap(); buzz(10);
@@ -889,11 +918,12 @@ function finishLesson() {
     <div class="dstats"><div class="ds gold"><small>획득 XP</small><b>${icon('bolt', 20)} ${xp}</b></div>
     <div class="ds jade"><small>정확도</small><b>${icon('target', 20)} ${acc}%</b></div>
     <div class="ds sky"><small>걸린 시간</small><b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</b></div></div>
-    ${LS.missed.size ? `<p class="dnote">틀린 ${LS.missed.size}개는 <b>복습 → 오답 노트</b>에 모아 뒀어요.</p>` : ''}</div>`;
+    ${LS.missed.size ? `<p class="dnote">${LS.skipped ? '틀리거나 건너뛴' : '틀린'} ${LS.missed.size}개는 <b>복습 → 오답 노트</b>에 모아 뒀어요.</p>` : ''}</div>`;
   if (!reduceMotion()) confetti();
   setTimeout(() => sfx.stamp(), 520);
   const foot = $('.lfoot', lessonEl()); foot.className = 'lfoot';
   $('.fb', foot).innerHTML = '';
+  $('#lskip').hidden = true;
   const btn = $('#lcheck'); btn.disabled = false; btn.className = 'btn wide'; btn.textContent = '계속';
   CUR = null;
   btn.onclick = () => { if (first) streakScreen(wasGoal); else { closeLesson(); afterLesson(); } };
@@ -1173,7 +1203,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="ilsin.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">일일신(日日新) v1.2 · 苟日新 日日新 又日新</p></div>`;
+    <p class="about">일일신(日日新) v1.3 · 苟日新 日日新 又日新</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
