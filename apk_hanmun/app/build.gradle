@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The app is the web version in ../../hanmun, copied into the APK's assets on every build.
+def webOut = layout.buildDirectory.dir('generated/web')
+def syncWeb = tasks.register('syncWeb', Sync) {
+    from('../../hanmun') {
+        include 'index.html', 'app.js', 'data.js', 'hanja.woff2', 'icon-192.png'
+    }
+    into webOut
+}
+
+android {
+    namespace 'com.hoenggi.ilsin'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.hoenggi.ilsin'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    sourceSets {
+        main.assets.srcDirs += [webOut.get().asFile]
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // signed with the local debug key so the APK installs directly (not for Play Store)
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+base {
+    archivesName = 'ilsin'
+}
+
+tasks.named('preBuild') { dependsOn syncWeb }
