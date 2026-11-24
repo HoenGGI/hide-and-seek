@@ -155,7 +155,7 @@ const tokens = s => s.m.split(' ');
   const addChar = c => { if (!seenC.has(c.k)) { seenC.add(c.k); POOL.chars.push(c); BYKEY[c.k] = c; } };
   UNITS.forEach(u => {
     u.lessons.forEach((L, li) => {
-      L.id = u.id + '-' + li; L.u = u; L.idx = li;
+      L.id = L.id || u.id + '-' + li; L.u = u; L.idx = li;   // 레슨을 합치거나 빼도 기록이 어긋나지 않게 id를 직접 적을 수 있음
       (L.words || []).forEach(h => { const w = WORDS[h]; if (!w.u) { w.u = u.id; POOL.words.push(w); BYKEY[w.k] = w; } charsOf(w).forEach(addChar); });
       (L.sents || []).forEach(id => { const s = SENTS[id]; if (!s.u) { s.u = u.id; POOL.sents.push(s); BYKEY[s.k] = s; } charsOf(s).forEach(addChar); });
       (L.chars || []).forEach(([ch, hun]) => addChar(charObj(ch, hun, u.id)));
@@ -1203,7 +1203,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="ilsin.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">일일신(日日新) v1.3 · 苟日新 日日新 又日新</p></div>`;
+    <p class="about">일일신(日日新) v1.4 · 苟日新 日日新 又日新</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
