@@ -1,10 +1,10 @@
-# 하루한입 — 과목별 학습 앱
+# 오티링고 — 과목별 학습 앱
 
-국어 · 역사 · 한문 · 과학을 듀오링고처럼 매일 한 입씩 공부하는 앱이에요.
+국어 · 역사 · 한문 · 과학을 듀오링고처럼 매일 조금씩 공부하는 앱이에요.
 지금은 2학년 2학기 한문 학습지와 공책 정리(14과 삶을 이끈 한마디, 15과 할아버지와 걷는 눈길, 김만덕 이야기 등)가 들어 있어요.
 하트 없이 몇 번 틀려도 레슨을 끝까지 할 수 있어요.
 
-- **설치**: `haruhanip.apk`를 안드로이드 휴대폰에 받아 설치 (출처를 알 수 없는 앱 설치 허용 필요)
+- **설치**: `otilingo.apk`를 안드로이드 휴대폰에 받아 설치 (출처를 알 수 없는 앱 설치 허용 필요)
 - **웹**: 이 폴더의 `index.html`을 열면 브라우저에서도 똑같이 쓸 수 있어요
 
 ## 들어 있는 것
@@ -60,7 +60,7 @@ Sen('gu', '苟日新이어든', ['진실로 구', '날 일', '새 신'], '진실
 ```sh
 python3 tools/make_font.py          # 새 한자를 글꼴에 넣기 (fonttools, fonts-noto-cjk 필요)
 cd ../apk_hanmun && ./gradlew assembleRelease
-cp app/build/outputs/apk/release/haruhanip-release.apk ../hanmun/haruhanip.apk
+cp app/build/outputs/apk/release/otilingo-release.apk ../hanmun/otilingo.apk
 ```
 
 브라우저 개발자 도구에서 `__ilsin.validate()`를 실행하면 훈음 개수, 독음, 풀이 순서가 맞는지 점검해 줘요.

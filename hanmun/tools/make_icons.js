@@ -1,4 +1,4 @@
-// 앱 아이콘(초록 바탕에 흰 글자 "하루/한입")을 웹 앱과 안드로이드 런처용 PNG로 만든다.
+// 앱 아이콘(초록 바탕에 흰 글자 "오티/링고")을 웹 앱과 안드로이드 런처용 PNG로 만든다.
 // 사용법: node tools/make_icons.js   (Noto Sans CJK 글꼴 필요: apt install fonts-noto-cjk)
 const { chromium } = require('playwright');
 const path = require('path');
@@ -18,7 +18,7 @@ const BG = '#1FA36A';
     const html = `<html><body style="margin:0;background:transparent">
       <div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;${bg ? `background:${bg};` : ''}${round ? `border-radius:${size * round}px;` : ''}overflow:hidden">
         <div style="font-family:'Noto Sans CJK KR','Noto Sans KR',sans-serif;font-weight:700;color:#fff;font-size:${fs1}px;line-height:1.02;letter-spacing:-.04em;text-align:center">
-          하루<br><span style="color:#FFE27A">한입</span></div>
+          오티<br><span style="color:#FFE27A">링고</span></div>
       </div></body></html>`;
     await p.setViewportSize({ width: size, height: size });
     await p.setContent(html);

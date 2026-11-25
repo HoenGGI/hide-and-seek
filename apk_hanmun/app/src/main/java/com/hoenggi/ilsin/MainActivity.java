@@ -33,7 +33,7 @@ import java.io.InputStream;
 import java.util.Locale;
 
 /**
- * 하루한입 앱 껍데기: 앱 안에 넣은 웹 화면(assets/index.html)을 띄우고,
+ * 오티링고 앱 껍데기: 앱 안에 넣은 웹 화면(assets/index.html)을 띄우고,
  * 한국어 읽어 주기(TTS) · 진동 · 클립보드 · 뒤로 가기를 웹 쪽에 이어 준다.
  * 학습 기록은 WebView의 localStorage에 남는다.
  */
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void copy(String text) {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("하루한입 백업", text));
+            if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("오티링고 백업", text));
         }
 
         // the page's theme setting can override the phone's light/dark mode

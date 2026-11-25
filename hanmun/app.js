@@ -1,4 +1,4 @@
-// 하루한입 — 듀오링고식 과목별 학습 앱 (지금은 한문). 내용은 data.js, 화면 구조와 스타일은 index.html.
+// 오티링고 — 듀오링고식 과목별 학습 앱 (지금은 한문). 내용은 data.js, 화면 구조와 스타일은 index.html.
 'use strict';
 
 /* ════════ 작은 도구 ════════ */
@@ -885,7 +885,7 @@ function streakScreen(goal) {
     <div class="sflame">${icon('flame', 120)}<b>${S.streak}</b></div>
     <h2>${S.streak}일 연속 학습!</h2>
     <div class="week">${week.map(k => { const d = new Date(k.replace(/-/g, '/')); return `<div class="wday ${S.days[k] ? 'on' : ''} ${k === t ? 'today' : ''}"><small>${wd[d.getDay()]}</small><i>${S.days[k] ? icon('check', 16) : ''}</i></div>`; }).join('')}</div>
-    <p class="motto"><b>하루 한 입씩</b>, 꾸준히 자라고 있어요.${goal ? '<br><b>오늘의 목표도 달성했어요!</b>' : ''}</p></div>`;
+    <p class="motto"><b>오늘도 한 걸음</b>, 꾸준히 자라고 있어요.${goal ? '<br><b>오늘의 목표도 달성했어요!</b>' : ''}</p></div>`;
   sfx.done();
   $('#lcheck').onclick = () => { closeLesson(); afterLesson(); };
 }
@@ -944,7 +944,7 @@ const subMark = s => `<span class="smk${isHz(s.mark) ? ' hz' : ''}">${esc(s.mark
 function renderTop() {
   const st = streakNow(), cur = curSub();
   const top = $('#top');
-  top.innerHTML = `<div class="toprow"><div class="brand"><span class="brandname">하루한입</span></div>
+  top.innerHTML = `<div class="toprow"><div class="brand"><span class="brandname">오티링고</span></div>
     <button class="stat flame ${st ? '' : 'off'}" data-go="profile" aria-label="연속 학습 ${st}일">${icon('flame', 24)}<b>${st}</b></button>
     <button class="stat xp" data-go="profile" aria-label="총 ${S.xp} XP">${icon('bolt', 24)}<b>${S.xp}</b></button></div>
     ${TAB === 'profile' || TAB === 'exam' ? '' : `<div class="subjects" role="tablist" aria-label="과목">${SUBJECTS.map(s => `<button role="tab" aria-selected="${s === cur}"
@@ -1053,7 +1053,7 @@ function renderLearn() {
     html += `</div></section>`;
   });
   const all = LESSONS.every(L => S.done[L.id]);
-  html += `<p class="pathend"><span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '하루 한 입씩, 꾸준히!'}</span></p>`;
+  html += `<p class="pathend"><span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '한 걸음씩, 꾸준히!'}</span></p>`;
   return html;
 }
 function nodePop(btn) {
@@ -1185,7 +1185,7 @@ function renderProfile() {
     return `<button class="sprog c-${s.color}" data-subj-go="${s.id}">${subMark(s)}<b>${esc(s.name)}</b>
       ${s.ready && ls.length ? `<span class="gbar"><i style="width:${Math.round(dn / ls.length * 100)}%"></i></span><small>${dn}/${ls.length}</small>` : '<span class="soonbadge small">준비 중</span>'}</button>`;
   }).join('');
-  return `<div class="page profile"><div class="phead"><div><h1>나의 학습</h1><p>2학년 2학기 · 하루한입</p></div></div>
+  return `<div class="page profile"><div class="phead"><div><h1>나의 학습</h1><p>2학년 2학기 · 오티링고</p></div></div>
     <div class="pstats">
       <div class="ps flame">${icon('flame', 26)}<b>${streakNow()}</b><small>연속 학습일</small></div>
       <div class="ps xp">${icon('bolt', 26)}<b>${S.xp}</b><small>총 XP</small></div>
@@ -1210,8 +1210,8 @@ function renderProfile() {
     <div class="row2"><button class="btn ghost wide" data-act="export">백업 코드 복사</button><button class="btn ghost wide" data-act="import">백업 불러오기</button></div>
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
-    <a class="btn wide" href="haruhanip.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">하루한입 v1.6 · 매일 한 입씩, 꾸준히</p></div>`;
+    <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
+    <p class="about">오티링고 v1.7 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
