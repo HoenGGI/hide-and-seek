@@ -106,8 +106,14 @@ if ('speechSynthesis' in window && !NATIVE) try { speechSynthesis.getVoices(); s
 
 /* ════════ 내용 색인 ════════ */
 const POOL = { chars: [], words: [], sents: [] };
-const LESSONS = [];           // 전체 레슨을 순서대로
+const LESSONS = [];           // 전체 레슨 (모든 과목, 순서대로)
 const BYKEY = {};             // 오답 노트용: 키 → 문제 재료
+const ALL_UNITS = [];         // 모든 과목의 단원
+const UNIT_SUB = {};          // 단원 id → 과목 id
+const TERMS = [];             // 용어 { t: 용어, d: 뜻 } (역사 등)
+const itemSub = x => UNIT_SUB[x && x.u];
+const SU = () => curSub().data;   // 지금 과목의 { units, summary, exam }
+const subLessons = sid => LESSONS.filter(L => L.sub === sid);
 function charObj(ch, hun, u) { return { kind: 'char', k: 'c:' + ch + '|' + hun, ch, hun, u }; }
 function charsOf(item) { return hzOf(item.h).map((ch, i) => charObj(ch, item.c[i], item.u)); }
 function reading(item) {           // 한자만 읽은 독음 (띄어쓰기 유지): 萬德은 取十之一 → 만덕 취십지일
@@ -128,28 +134,31 @@ const tokens = s => s.m.split(' ');
 (function index() {
   const seenC = new Set();
   const addChar = c => { if (!seenC.has(c.k)) { seenC.add(c.k); POOL.chars.push(c); BYKEY[c.k] = c; } };
-  UNITS.forEach(u => {
+  SUBJECTS.filter(sb => sb.data).forEach(sb => sb.data.units.forEach(u => {
+    UNIT_SUB[u.id] = sb.id; u.subj = sb.id; ALL_UNITS.push(u);
     u.lessons.forEach((L, li) => {
-      L.id = L.id || u.id + '-' + li; L.u = u; L.idx = li;   // 레슨을 합치거나 빼도 기록이 어긋나지 않게 id를 직접 적을 수 있음
+      L.id = L.id || u.id + '-' + li; L.u = u; L.idx = li; L.sub = sb.id;   // 레슨을 합치거나 빼도 기록이 어긋나지 않게 id를 직접 적을 수 있음
       (L.words || []).forEach(h => { const w = WORDS[h]; if (!w.u) { w.u = u.id; POOL.words.push(w); BYKEY[w.k] = w; } charsOf(w).forEach(addChar); });
       (L.sents || []).forEach(id => { const s = SENTS[id]; if (!s.u) { s.u = u.id; POOL.sents.push(s); BYKEY[s.k] = s; } charsOf(s).forEach(addChar); });
       (L.chars || []).forEach(([ch, hun]) => addChar(charObj(ch, hun, u.id)));
       ['quiz', 'cloze', 'pairs'].forEach(f => (L[f] || []).forEach((q, i) => { q.k = q.k || f[0] + ':' + L.id + ':' + i; q.kind = f; q.u = u.id; BYKEY[q.k] = q; }));
+      (L.terms || []).forEach(([t, d]) => { const x = { kind: 'term', k: 'tm:' + t, t, d, u: u.id }; if (!BYKEY[x.k]) { BYKEY[x.k] = x; TERMS.push(x); } });
       LESSONS.push(L);
     });
-    (EXAM[u.id] || []).forEach((q, i) => { q.k = 'x:' + u.id + ':' + i; q.kind = 'exam'; q.u = u.id; BYKEY[q.k] = q; });
-  });
+    (sb.data.exam[u.id] || []).forEach((q, i) => { q.k = 'x:' + u.id + ':' + i; q.kind = 'exam'; q.u = u.id; BYKEY[q.k] = q; });
+  }));
 })();
 
 function unitItems(uids) {
-  const set = new Set(uids), it = { words: [], sents: [], chars: [], quiz: [], cloze: [], pairs: [] };
+  const set = new Set(uids), it = { words: [], sents: [], chars: [], quiz: [], cloze: [], pairs: [], terms: [] };
   LESSONS.filter(L => set.has(L.u.id)).forEach(L => {
     (L.words || []).forEach(h => it.words.push(WORDS[h]));
     (L.sents || []).forEach(id => it.sents.push(SENTS[id]));
     (L.chars || []).forEach(([ch, hun]) => it.chars.push(BYKEY['c:' + ch + '|' + hun]));
     ['quiz', 'cloze', 'pairs'].forEach(f => (L[f] || []).forEach(q => it[f].push(q)));
+    (L.terms || []).forEach(([t]) => it.terms.push(BYKEY['tm:' + t]));
   });
-  it.words = [...new Set(it.words)]; it.sents = [...new Set(it.sents)];
+  it.words = [...new Set(it.words)]; it.sents = [...new Set(it.sents)]; it.terms = [...new Set(it.terms)];
   return it;
 }
 
@@ -346,6 +355,7 @@ const X = {
     };
   },
   quiz(q) {
+    if (q.t === 'short' || q.t === 'seq' || q.p) return X.exam(q);
     return {
       type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : (q.w.length < 3 ? 'grid2' : 'list'), quiz: true,
       prompt: '', opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : esc(v), d: describe(v) })),
@@ -353,16 +363,44 @@ const X = {
     };
   },
   exam(q) {
+    // 문제 상자: 한자만 있으면 크게, 아니면 보기 상자로
+    const onlyHz = q.p && hzOf(q.p).length === q.p.replace(/\s/g, '').length;
+    const box = !q.p ? '' : onlyHz ? `<div class="bighz hz word">${esc(q.p)}</div>` : `<div class="qbox">${hzWrap(q.p)}</div>`;
+    if (q.t === 'seq') {
+      let tiles = shuffle(q.a), guard = 0;
+      while (tiles.join() === q.a.join() && guard++ < 8) tiles = shuffle(q.a);
+      return { type: 'tiles', key: q.k, item: q, title: q.q, tcls: 'ko', ordered: true, prompt: box, tiles, ans: q.a, join: ' → ', answerText: q.a.join(' → '), say: '', exp: q.exp || '' };
+    }
     if (q.t === 'short') return {
-      type: 'type', key: q.k, item: q, title: q.q, prompt: `<div class="bighz hz word">${esc(q.p)}</div>`,
-      ans: q.a.map(norm), answerText: q.a[0], say: q.a[0], exp: q.exp || ''
+      type: 'type', key: q.k, item: q, title: q.q, prompt: box,
+      ans: q.a.map(norm), answerText: q.a[0], say: onlyHz ? q.a[0] : '', exp: q.exp || ''
     };
     return {
-      type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : 'list',
-      prompt: q.p ? `<div class="qbox">${hzWrap(q.p)}</div>` : '',
+      type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : (q.w.length < 3 ? 'grid2' : 'list'),
+      prompt: box,
       opts: shuffle([q.a, ...q.w]).map(v => ({ v, html: q.hz ? `<span class="hz">${esc(v)}</span>` : hzWrap(v), d: describe(v) })),
       ans: q.a, answerText: q.a, say: '', exp: q.exp || ''
     };
+  },
+  // 용어: 뜻 → 용어 고르기 / 용어 → 뜻 고르기 / 뜻 → 용어 쓰기
+  termPick(x) {
+    const ds = distract(3, prefer(TERMS.filter(y => itemSub(y) === itemSub(x)), x.u), y => y.t !== x.t, y => y.t);
+    if (ds.length < 3) return null;
+    return {
+      type: 'choice', key: x.k, item: x, title: '설명에 알맞은 용어를 고르세요', layout: 'grid2', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`,
+      opts: shuffle([x, ...ds]).map(y => ({ v: y.t, html: hzWrap(y.t), d: y.d })), ans: x.t, answerText: x.t, say: '', exp: ''
+    };
+  },
+  termDef(x) {
+    const ds = distract(3, prefer(TERMS.filter(y => itemSub(y) === itemSub(x)), x.u), y => y.t !== x.t, y => y.t);
+    if (ds.length < 3) return null;
+    return {
+      type: 'choice', key: x.k, item: x, title: `'${x.t}'의 뜻으로 알맞은 것은?`, layout: 'list', prompt: '',
+      opts: shuffle([x, ...ds]).map(y => ({ v: y.d, html: hzWrap(y.d), d: `${y.t}의 뜻` })), ans: x.d, answerText: x.d, say: '', exp: ''
+    };
+  },
+  termType(x) {
+    return { type: 'type', key: x.k, item: x, title: '설명에 알맞은 용어를 쓰세요', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`, ans: [norm(x.t)], answerText: x.t, say: '', exp: '' };
   },
   cloze(z) {
     const ws = [z.a, ...z.w].map(h => WORDS[h]).filter(Boolean);
@@ -408,6 +446,12 @@ const T = {   // 새로 배우는 카드
       <p class="thelp">글자를 누르면 훈음을 읽어 줘요.</p>`
     };
   },
+  terms(list) {
+    return {
+      type: 'teach', key: 'tt:' + list.map(x => x.t).join('|'), say: '', html: `<div class="tag note">${icon('book', 16)} 용어 더하기</div>
+      <ul class="nlist terms">${list.map(x => `<li><b>${esc(x.t)}</b><span>${esc(x.d)}</span></li>`).join('')}</ul>`
+    };
+  },
   note(n) {
     return {
       type: 'teach', key: n.k, say: '', html: `<div class="tag note">${icon('bulb', 16)} 핵심 정리</div>
@@ -443,17 +487,19 @@ function roundRobin(groups, n) {
 const uniqChars = list => { const s = new Set; return list.filter(c => !s.has(c.k) && s.add(c.k)); };
 const charGens = c => shuffle([() => X.pickHunum(c), () => X.pickHanja(c)]);
 const charGensLearn = c => [() => X.pickHanja(c), () => X.pickHunum(c)];   // 앞에서 훈음 고르기를 했으니 한자 고르기부터
+const termGens = x => shuffle([() => X.termPick(x), () => X.termDef(x), () => X.termType(x)]);
 
 function resolve(L) {
   return {
     words: (L.words || []).map(h => WORDS[h]), sents: (L.sents || []).map(id => SENTS[id]),
     chars: (L.chars || []).map(([ch, hun]) => BYKEY['c:' + ch + '|' + hun]), notes: (L.notes || []).map(id => NOTES[id]),
-    quiz: L.quiz || [], cloze: L.cloze || [], pairs: L.pairs || []
+    quiz: L.quiz || [], cloze: L.cloze || [], pairs: L.pairs || [], terms: (L.terms || []).map(([t]) => BYKEY['tm:' + t])
   };
 }
 function buildLearn(it) {
   const head = [], mixed = [];
   it.notes.forEach(n => head.push(T.note(n)));
+  if (it.terms.length) head.push(T.terms(it.terms));
   if (it.chars.length) { head.push(T.chars(it.chars)); it.chars.forEach(c => head.push(X.pickHunum(c) || X.pickHanja(c))); }
   it.words.forEach(w => { head.push(T.word(w)); head.push(X.pickHunum(pick(charsOf(w)))); head.push(X.wordEum(w)); });
   it.sents.forEach(s => { head.push(T.sent(s)); head.push(X.sentTrans(s)); });
@@ -463,7 +509,7 @@ function buildLearn(it) {
   const all = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]);
   if (all.length >= 4 && !it.pairs.length) mixed.push(X.charMatch(all));
   const graded = head.filter(e => e && e.type !== 'teach').length + mixed.length;
-  const groups = [...it.words.map(w => wordGens(w, 'learn')), ...it.sents.map(s => sentGens(s, 'learn')), ...it.chars.map(charGensLearn)];
+  const groups = [...it.words.map(w => wordGens(w, 'learn')), ...it.sents.map(s => sentGens(s, 'learn')), ...it.chars.map(charGensLearn), ...it.terms.map(termGens)];
   // 문장이 하나뿐인 레슨도 충분히 연습하도록: 핵심 글자 훈음, 문장 속 한자 고르기를 덧붙인다
   it.sents.forEach(s => {
     groups.push((s.focus || []).map(i => () => X.ctxChar(s, i)));
@@ -474,12 +520,15 @@ function buildLearn(it) {
 }
 function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   const fixed = [];
+  it.terms = it.terms || [];
+  // 한자 재료가 없는 과목(역사 등)은 문제 대부분을 레슨 문제에서 고른다
+  if (!it.words.length && !it.sents.length && !it.chars.length) quizN = Math.max(quizN, n - 2 - Math.min(3, it.terms.length));
   shuffle(it.pairs).slice(0, 1).forEach(p => fixed.push(X.pairs(p)));
   const chars = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]);
   if (chars.length >= 4) fixed.push(X.charMatch(chars));
   shuffle(it.cloze).slice(0, clozeN).forEach(z => fixed.push(X.cloze(z)));
   shuffle(it.quiz).slice(0, quizN).forEach(q => fixed.push(X.quiz(q)));
-  const groups = shuffle([...it.words.map(w => wordGens(w, mode)), ...it.sents.map(s => sentGens(s, mode)), ...shuffle(chars).slice(0, 6).map(charGens)]);
+  const groups = shuffle([...it.words.map(w => wordGens(w, mode)), ...it.sents.map(s => sentGens(s, mode)), ...shuffle(chars).slice(0, 6).map(charGens), ...it.terms.map(termGens)]);
   return shuffle([...fixed, ...roundRobin(groups, Math.max(4, n - fixed.length))]).filter(Boolean).slice(0, n);
 }
 function buildLesson(L) {
@@ -491,14 +540,16 @@ function buildLesson(L) {
   return { mode: 'learn', ex: buildLearn(resolve(L)) };
 }
 function learnedItems() {
-  const done = LESSONS.filter(L => S.done[L.id] && !L.exam);
-  const uids = done.length ? [...new Set(done.map(L => L.u.id))] : ['u1'];
-  const it = { words: [], sents: [], chars: [], quiz: [], cloze: [], pairs: [] };
-  (done.length ? done : LESSONS.filter(L => L.u.id === 'u1')).forEach(L => {
+  const mine = subLessons(curSub().id).filter(L => !L.exam && !L.review);
+  const done = mine.filter(L => S.done[L.id]);
+  const use = done.length ? done : mine.filter(L => mine.length && L.u === mine[0].u);
+  const uids = [...new Set(use.map(L => L.u.id))];
+  const it = { words: [], sents: [], chars: [], quiz: [], cloze: [], pairs: [], terms: [] };
+  use.forEach(L => {
     const r = resolve(L);
-    ['words', 'sents', 'chars', 'quiz', 'cloze', 'pairs'].forEach(f => it[f].push(...r[f]));
+    ['words', 'sents', 'chars', 'quiz', 'cloze', 'pairs', 'terms'].forEach(f => it[f].push(...r[f]));
   });
-  it.words = [...new Set(it.words)]; it.sents = [...new Set(it.sents)];
+  it.words = [...new Set(it.words)]; it.sents = [...new Set(it.sents)]; it.terms = [...new Set(it.terms)];
   return { it, uids };
 }
 function exFromKey(k) {
@@ -510,11 +561,12 @@ function exFromKey(k) {
   if (x.kind === 'cloze') return X.cloze(x);
   if (x.kind === 'pairs') return X.pairs(x);
   if (x.kind === 'exam') return X.exam(x);
+  if (x.kind === 'term') return pick([X.termPick, X.termDef, X.termType])(x) || X.termType(x);
   return null;
 }
 const PRACTICE = {
   mistakes() {
-    const keys = Object.entries(S.wrong).filter(([k]) => BYKEY[k]).sort((a, b) => b[1] - a[1]).map(e => e[0]).slice(0, 12);
+    const keys = Object.entries(S.wrong).filter(([k]) => BYKEY[k] && itemSub(BYKEY[k]) === curSub().id).sort((a, b) => b[1] - a[1]).map(e => e[0]).slice(0, 12);
     const ex = keys.map(exFromKey).filter(Boolean);
     if (ex.length < 6) keys.slice(0, 6 - ex.length).forEach(k => { const e = exFromKey(k); if (e) ex.push(e); });
     return shuffle(ex);
@@ -532,6 +584,7 @@ const PRACTICE = {
     if (!it.sents.length) return null;
     return roundRobin(shuffle(it.sents).map(s => sentGens(s, 'review')), 12);
   },
+  mixed() { const { it } = learnedItems(); return buildMixed(it, 12, 'review', { quizN: 9, clozeN: 0 }); },
 };
 
 /* ════════ 레슨 진행 ════════ */
@@ -757,20 +810,21 @@ function award(xp) {
 
 /* ════════ 퀴즈 (시험처럼 풀고 마지막에 채점) ════════ */
 function buildQuiz(uids, n) {
-  const bank = shuffle(uids.flatMap(u => EXAM[u] || []));
+  const bank = shuffle(uids.flatMap(u => SU().exam[u] || []));
   const out = bank.slice(0, Math.min(bank.length, Math.round(n * 0.65))).map(X.exam);
   const it = unitItems(uids);
   const gens = shuffle([
     ...it.words.map(w => shuffle([() => X.wordEum(w), () => X.typeEum(w), () => X.wordMean(w), () => X.meanWord(w), () => X.wordCloze(w)])),
     ...it.sents.map(s => shuffle([() => X.sentChoice(s), () => X.ctxChar(s), () => X.sentEum(s), () => X.sentBuild(s), ...(s.ord ? [() => X.order(s)] : [])])),
+    ...it.terms.map(termGens), ...shuffle(it.quiz).map(q => [() => X.quiz(q)]),
   ]);
   out.push(...roundRobin(gens, n - out.length));
   return shuffle(out).slice(0, n);
 }
 function startQuiz(u, n) {
-  const uids = u === 'all' ? UNITS.filter(x => EXAM[x.id]).map(x => x.id) : [u];
-  const unit = UNITS.find(x => x.id === u);
-  startLesson({ mode: 'quiz', title: `${unit ? unit.no : '전체'} 퀴즈`, ex: buildQuiz(uids, n) });
+  const uids = u === 'all' ? SU().units.filter(x => SU().exam[x.id]).map(x => x.id) : [u];
+  const unit = ALL_UNITS.find(x => x.id === u);
+  startLesson({ mode: 'quiz', title: `${curSub().name} ${unit ? unit.no : '전체'} 퀴즈`, ex: buildQuiz(uids, n) });
 }
 function answerOf(e) {
   const st = e.state;
@@ -1030,21 +1084,21 @@ function renderExam() {
 
 /* ════════ 학습(길) 화면 ════════ */
 let TAB = 'learn';
-function lessonState(L, idx) {
+function lessonState(L) {
   if (S.done[L.id]) return 'done';
   if (S.settings.all) return 'open';
-  const firstOpen = LESSONS.findIndex(x => !S.done[x.id]);
-  return idx === firstOpen ? 'current' : idx < firstOpen ? 'open' : 'locked';
+  const mine = subLessons(L.sub), first = mine.find(x => !S.done[x.id]);
+  return L === first ? 'current' : mine.indexOf(L) < mine.indexOf(first) ? 'open' : 'locked';
 }
 function renderLearn() {
   const goal = S.settings.goal, tx = todayXp(), pct = Math.min(100, Math.round(tx / goal * 100));
-  let gi = 0, html = examBanner() + `<div class="goalcard"><div class="gtxt"><b>오늘의 목표</b><span>${tx} / ${goal} XP</span></div><div class="gbar"><i style="width:${pct}%"></i></div>${pct >= 100 ? `<span class="gdone">${icon('check', 16)} 달성</span>` : ''}</div>`;
-  UNITS.forEach((u, ui) => {
+  let html = examBanner() + `<div class="goalcard"><div class="gtxt"><b>오늘의 목표</b><span>${tx} / ${goal} XP</span></div><div class="gbar"><i style="width:${pct}%"></i></div>${pct >= 100 ? `<span class="gdone">${icon('check', 16)} 달성</span>` : ''}</div>`;
+  SU().units.forEach((u, ui) => {
     html += `<section class="unit c-${u.color}" id="${u.id}">
       <header class="uhead"><div><small>${esc(u.no)}</small><h2>${esc(u.title)}</h2><p>${esc(u.sub)}</p></div>
       <button class="unote" data-notes="${u.id}" aria-label="${esc(u.no)} 요약 보기">${icon('book', 22)}<span>요약</span></button></header><div class="path">`;
     u.lessons.forEach((L, li) => {
-      const idx = gi++, st = lessonState(L, idx), x = Math.round(Math.sin(li * 0.95 + (ui % 2 ? Math.PI : 0)) * 74);
+      const idx = LESSONS.indexOf(L), st = lessonState(L), x = Math.round(Math.sin(li * 0.95 + (ui % 2 ? Math.PI : 0)) * 74);
       const ic = L.exam ? 'crown' : L.review ? 'trophy' : st === 'done' ? 'check' : st === 'locked' ? 'lock' : 'star';
       html += `<div class="nrow" style="--x:${x}px">
         <button class="node ${st}${L.review || L.exam ? ' big' : ''}" data-l="${idx}" aria-label="${esc(L.t)} ${st === 'done' ? '완료' : st === 'locked' ? '잠김' : ''}">
@@ -1052,13 +1106,13 @@ function renderLearn() {
     });
     html += `</div></section>`;
   });
-  const all = LESSONS.every(L => S.done[L.id]);
+  const all = subLessons(curSub().id).every(L => S.done[L.id]);
   html += `<p class="pathend"><span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '한 걸음씩, 꾸준히!'}</span></p>`;
   return html;
 }
 function nodePop(btn) {
   closePop();
-  const L = LESSONS[+btn.dataset.l], st = lessonState(L, +btn.dataset.l), u = L.u;
+  const L = LESSONS[+btn.dataset.l], st = lessonState(L), u = L.u;
   const n = u.lessons.filter(x => !x.review && !x.exam).length;
   const pos = L.review ? '단원 복습' : L.exam ? '종합 평가' : `레슨 ${L.idx + 1} / ${n}`;
   const d = S.done[L.id];
@@ -1077,32 +1131,35 @@ function scrollToCurrent(smooth) {
 
 /* ════════ 복습 화면 ════════ */
 function renderReview() {
-  const wrongN = Object.keys(S.wrong).filter(k => BYKEY[k]).length;
+  const sid = curSub().id, wrongN = Object.keys(S.wrong).filter(k => BYKEY[k] && itemSub(BYKEY[k]) === sid).length;
+  const exams = SU().units.flatMap(u => u.lessons).filter(L => L.exam);
   const { it } = learnedItems();
   const charN = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]).length;
   const card = (k, ic, c, t, d, dis) => `<button class="rcard c-${c}" data-practice="${k}" ${dis ? 'disabled' : ''}><span class="ricon">${icon(ic, 28)}</span><span class="rtxt"><b>${t}</b><small>${d}</small></span></button>`;
   return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀렸던 문제와 배운 내용을 다시 풀면서 실력을 다져요.</p>
     ${card('mistakes', 'refresh', 'coral', '오답 노트', wrongN ? `틀렸던 문제 ${wrongN}개 다시 풀기` : '아직 틀린 문제가 없어요', !wrongN)}
-    ${card('chars', 'star', 'jade', '한자 훈음 연습', `배운 한자 ${charN}자에서 골라 풀기`)}
+    ${sid === 'hanmun' ? `${card('chars', 'star', 'jade', '한자 훈음 연습', `배운 한자 ${charN}자에서 골라 풀기`)}
     ${card('words', 'book', 'violet', '어휘 연습', `독음 · 뜻 · 빈칸 채우기`)}
-    ${card('sents', 'bulb', 'sky', '문장 연습', it.sents.length ? `독음 · 풀이 · 풀이 순서` : '문장 레슨을 끝내면 열려요', !it.sents.length)}
-    <h2 class="sect">${icon('crown', 22)} 시험 대비</h2>
-    ${UNITS[UNITS.length - 1].lessons.map((L) => `<button class="rcard c-ink" data-lesson="${L.id}"><span class="ricon">${icon('crown', 26)}</span><span class="rtxt"><b>${esc(L.t)}</b><small>${L.exam.map(id => UNITS.find(u => u.id === id).no).join(' · ')} · ${L.exam.length > 2 ? 25 : 20}문제${S.done[L.id] ? ` · 최고 ${S.done[L.id].best}%` : ''}</small></span></button>`).join('')}
+    ${card('sents', 'bulb', 'sky', '문장 연습', it.sents.length ? `독음 · 풀이 · 풀이 순서` : '문장 레슨을 끝내면 열려요', !it.sents.length)}`
+      : card('mixed', 'bulb', 'sky', '개념 문제 연습', `배운 레슨에서 문제 · 용어 · 순서 맞추기를 골라 풀기`)}
+    ${exams.length ? `<h2 class="sect">${icon('crown', 22)} 시험 대비</h2>` : ''}
+    ${exams.map((L) => `<button class="rcard c-ink" data-lesson="${L.id}"><span class="ricon">${icon('crown', 26)}</span><span class="rtxt"><b>${esc(L.t)}</b><small>${L.exam.map(id => ALL_UNITS.find(u => u.id === id).no).join(' · ')} · ${L.exam.length > 2 ? 25 : 20}문제${S.done[L.id] ? ` · 최고 ${S.done[L.id].best}%` : ''}</small></span></button>`).join('')}
   </div>`;
 }
 
 /* ════════ 퀴즈 화면 ════════ */
 let QUIZ_U = 'all', QUIZ_N = 10;
 function renderQuiz() {
-  const chips = [['all', '전체'], ...UNITS.filter(u => EXAM[u.id]).map(u => [u.id, u.no])];
-  const sel = UNITS.find(u => u.id === QUIZ_U);
+  const qunits = SU().units.filter(u => SU().exam[u.id]);
+  const chips = [['all', '전체'], ...qunits.map(u => [u.id, u.no])];
+  const sel = qunits.find(u => u.id === QUIZ_U);
   const hist = (S.quiz || []).slice(0, 8);
   const best = (S.quiz || []).length ? Math.max(...S.quiz.map(h => h.s)) : null;
   return `<div class="page quiz"><h1 class="ptitle">퀴즈</h1>
     <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점해요. 틀린 문제는 오답 노트에 모여요.</p>
     <h2 class="sect">범위</h2>
     <div class="chips wrap">${chips.map(([id, t]) => `<button class="chip ${QUIZ_U === id ? 'on' : ''}" data-qu="${id}">${t}</button>`).join('')}</div>
-    <p class="qrange">${sel ? `${esc(sel.no)} · ${esc(sel.title)}` : '1~5단원 전체에서 골고루'}</p>
+    <p class="qrange">${sel ? `${esc(sel.no)} · ${esc(sel.title)}` : `${esc(curSub().name)} ${qunits.length}개 단원 전체에서 골고루`}</p>
     <h2 class="sect">문항 수</h2>
     <div class="goals">${[10, 20].map(n => `<button class="chip ${QUIZ_N === n ? 'on' : ''}" data-qn="${n}">${n}문제<small>${n === 10 ? '약 5분' : '약 10분'}</small></button>`).join('')}</div>
     <button class="btn wide qstart" data-qstart="1">${icon('quiz', 22)} 퀴즈 시작</button>
@@ -1117,19 +1174,21 @@ function renderQuiz() {
 let NOTE_U = 'all', NOTE_Q = '', NOTE_HIDE = false, NOTE_MODE = 'sum';
 const hid = s => NOTE_HIDE ? `<span class="cover" tabindex="0">${esc(s)}</span>` : esc(s);
 function renderNotes() {
-  const chips = [['all', '전체'], ...UNITS.filter(u => u.id !== 'u6').map(u => [u.id, u.no])];
+  const chips = [['all', '전체'], ...noteUnits().map(u => [u.id, u.no])];
   return `<div class="page notes"><h1 class="ptitle">요약</h1>
     <div class="seg big">${[['sum', '핵심 요약'], ['all', '전체 노트']].map(([m, l]) => `<button data-nmode="${m}" class="${NOTE_MODE === m ? 'on' : ''}">${l}</button>`).join('')}</div>
-    ${NOTE_MODE === 'all' ? `<div class="nsearch">${icon('search', 20)}<input id="nq" type="search" placeholder="한자, 독음, 뜻으로 찾기" value="${esc(NOTE_Q)}" autocomplete="off"></div>` : ''}
+    ${NOTE_MODE === 'all' ? `<div class="nsearch">${icon('search', 20)}<input id="nq" type="search" placeholder="${curSub().id === 'hanmun' ? '한자, 독음, 뜻으로 찾기' : '용어, 사건, 인물로 찾기'}" value="${esc(NOTE_Q)}" autocomplete="off"></div>` : ''}
     <div class="chips">${chips.map(([id, t]) => `<button class="chip ${NOTE_U === id ? 'on' : ''}" data-nu="${id}">${t}</button>`).join('')}
       <button class="chip hide ${NOTE_HIDE ? 'on' : ''}" data-hide="1">${NOTE_HIDE ? '답 가림' : '답 가리기'}</button></div>
     <div id="nlist">${notesBody()}</div></div>`;
 }
 const notesBody = () => NOTE_MODE === 'sum' ? summaryList() : noteList();
+// 종합 평가만 있는 단원(마무리)은 요약·노트에서 뺀다
+const noteUnits = () => SU().units.filter(u => !u.lessons.every(L => L.exam));
 function summaryList() {
-  return UNITS.filter(u => SUMMARY[u.id] && (NOTE_U === 'all' || NOTE_U === u.id)).map(u => `<section class="sunit c-${u.color}">
+  return SU().units.filter(u => SU().summary[u.id] && (NOTE_U === 'all' || NOTE_U === u.id)).map(u => `<section class="sunit c-${u.color}">
     <div class="shead"><small>${esc(u.no)}</small><h2>${esc(u.title)}</h2></div>
-    ${SUMMARY[u.id].map(sumSection).join('')}
+    ${SU().summary[u.id].map(sumSection).join('')}
     <button class="btn wide ghost squiz" data-quizunit="${u.id}">${icon('quiz', 20)} ${esc(u.no)} 퀴즈 풀기</button></section>`).join('');
 }
 function sumSection(sec) {
@@ -1147,13 +1206,14 @@ function noteList() {
   const q = NOTE_Q.trim();
   const match = (...xs) => !q || xs.some(x => x && String(x).includes(q));
   let out = '';
-  UNITS.filter(u => u.id !== 'u6' && (NOTE_U === 'all' || NOTE_U === u.id)).forEach(u => {
+  noteUnits().filter(u => NOTE_U === 'all' || NOTE_U === u.id).forEach(u => {
     const it = unitItems([u.id]);
-    const notes = [...new Set(u.lessons.flatMap(L => L.notes || []))].map(id => NOTES[id]).filter(n => match(n.title, n.body, n.ex, n.big));
+    const notes = [...new Set(u.lessons.flatMap(L => L.notes || []))].map(id => NOTES[id]).filter(n => match(n.title, n.body, n.ex, n.big, (n.list || []).flat().join(" ")));
     const chars = it.chars.filter(c => match(c.ch, c.hun));
     const words = it.words.filter(w => match(w.h, w.r, w.m, w.c.join(' ')));
     const sents = it.sents.filter(s => match(s.h, s.m, readingToe(s), s.c.join(' ')));
-    if (!notes.length && !chars.length && !words.length && !sents.length) return;
+    const terms = it.terms.filter(x => match(x.t, x.d));
+    if (!notes.length && !chars.length && !words.length && !sents.length && !terms.length) return;
     out += `<section class="nunit c-${u.color}"><h2><small>${esc(u.no)}</small> ${esc(u.title)}</h2>`;
     notes.forEach(n => { out += `<div class="ncard note"><b>${esc(n.title)}</b>${n.body ? `<p>${esc(n.body)}</p>` : ''}${n.list ? `<ul>${n.list.map(([a, b]) => `<li><b>${esc(a)}</b> ${esc(b)}</li>`).join('')}</ul>` : ''}${n.ex ? `<p class="nex">${esc(n.ex)}</p>` : ''}</div>`; });
     if (chars.length) out += `<div class="ngrid">${chars.map(c => `<button class="nchar" data-say="${esc(c.hun)}"><span class="hz">${c.ch}</span><small>${hid(c.hun)}</small></button>`).join('')}</div>`;
@@ -1166,6 +1226,7 @@ function noteList() {
       <div class="nhun">${hzOf(s.h).map((ch, i) => `${ch} ${esc(s.c[i])}`).join(' · ')}</div>
       <div class="nr">${hid(readingToe(s))}</div><div class="nm">${hid(s.m)}</div>${s.src ? `<div class="nsrc">${esc(s.src)}</div>` : ''}</div>`;
     });
+    if (terms.length) out += `<div class="ncard terms"><b>용어 더하기</b><ul>${terms.map(x => `<li><b>${esc(x.t)}</b> ${hid(x.d)}</li>`).join('')}</ul></div>`;
     out += `</section>`;
   });
   return out || `<p class="empty">찾는 내용이 없어요.</p>`;
@@ -1181,7 +1242,7 @@ function renderProfile() {
   const wd = ['일', '월', '화', '수', '목', '금', '토'];
   const tg = (k, label, desc) => `<label class="set"><span><b>${label}</b>${desc ? `<small>${desc}</small>` : ''}</span><input type="checkbox" data-set="${k}" ${S.settings[k] ? 'checked' : ''}><i class="sw"></i></label>`;
   const subRows = SUBJECTS.map(s => {
-    const ls = s.id === 'hanmun' ? LESSONS : [], dn = ls.filter(L => S.done[L.id]).length;
+    const ls = subLessons(s.id), dn = ls.filter(L => S.done[L.id]).length;
     return `<button class="sprog c-${s.color}" data-subj-go="${s.id}">${subMark(s)}<b>${esc(s.name)}</b>
       ${s.ready && ls.length ? `<span class="gbar"><i style="width:${Math.round(dn / ls.length * 100)}%"></i></span><small>${dn}/${ls.length}</small>` : '<span class="soonbadge small">준비 중</span>'}</button>`;
   }).join('');
@@ -1211,7 +1272,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.7 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.8 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1250,7 +1311,7 @@ function show(tab, opts = {}) {
   v.innerHTML = tab === 'profile' ? renderProfile() : tab === 'exam' ? renderExam() : !sub.ready ? renderSoon(sub, tab)
     : tab === 'learn' ? renderLearn() : tab === 'review' ? renderReview() : tab === 'notes' ? renderNotes() : renderQuiz();
   if (tab === 'learn' && sub.ready) requestAnimationFrame(() => scrollToCurrent(false));
-  else if (opts.unit) requestAnimationFrame(() => { const s = document.getElementById(opts.unit) || $(`.nunit.c-${UNITS.find(u => u.id === opts.unit).color}`); if (s) s.scrollIntoView(); });
+  else if (opts.unit) requestAnimationFrame(() => { const s = document.getElementById(opts.unit) || $(`.nunit.c-${ALL_UNITS.find(u => u.id === opts.unit).color}`); if (s) s.scrollIntoView(); });
   else window.scrollTo(0, 0);
 }
 function applyTheme() {
@@ -1279,9 +1340,9 @@ document.addEventListener('click', ev => {
   const xr = t.closest('[data-xr]'); if (xr) { const el = document.getElementById('xr-' + xr.dataset.xr); if (el) window.scrollTo({ top: scrollY + el.getBoundingClientRect().top - $('#top').offsetHeight - 12, behavior: reduceMotion() ? 'auto' : 'smooth' }); return; }
   const xq = t.closest('[data-xquiz]'); if (xq) { S.subject = xq.dataset.xquiz; save(); QUIZ_U = 'all'; TAB = 'quiz'; startQuiz('all', 20); return; }
   const qz = t.closest('[data-quizunit]'); if (qz) { QUIZ_U = qz.dataset.quizunit; TAB = 'quiz'; startQuiz(QUIZ_U, 10); return; }
-  const sg = t.closest('[data-subj-go]'); if (sg) { sfx.tap(); S.subject = sg.dataset.subjGo; save(); show('learn'); return; }
+  const sg = t.closest('[data-subj-go]'); if (sg) { sfx.tap(); S.subject = sg.dataset.subjGo; NOTE_U = QUIZ_U = 'all'; save(); show('learn'); return; }
   const sj = t.closest('[data-subj]');
-  if (sj) { sfx.tap(); if (S.subject !== sj.dataset.subj) { S.subject = sj.dataset.subj; save(); show(TAB); } return; }
+  if (sj) { sfx.tap(); if (S.subject !== sj.dataset.subj) { S.subject = sj.dataset.subj; NOTE_U = QUIZ_U = 'all'; save(); show(TAB); } return; }
   const pr = t.closest('[data-practice]'); if (pr) { startPractice(pr.dataset.practice); return; }
   const ls = t.closest('[data-lesson]'); if (ls) { startNode(LESSONS.find(L => L.id === ls.dataset.lesson)); return; }
   const say = t.closest('[data-say]'); if (say) { tts.say(say.dataset.say); say.classList.remove('pop'); void say.offsetWidth; say.classList.add('pop'); }
@@ -1354,11 +1415,14 @@ window.__ilsin = {
       if (!s.u) errs.push('레슨에 없음: ' + s.id);
     });
     LESSONS.forEach(L => ['quiz', 'cloze'].forEach(f => (L[f] || []).forEach(q => { if ((q.w || []).includes(q.a)) errs.push('정답이 오답 목록에: ' + q.k); })));
-    Object.values(EXAM).flat().forEach(q => {
-      if (q.t === 'short') { if (!q.p || !q.a.length) errs.push('단답형 형식: ' + q.k); }
+    LESSONS.forEach(L => (L.notes || []).forEach(id => { if (!NOTES[id]) errs.push('없는 정리 카드: ' + id); }));
+    LESSONS.forEach(L => (L.quiz || []).forEach(q => { if (q.t === 'seq' && q.a.length < 3) errs.push('순서 문제가 너무 짧음: ' + q.k); }));
+    if (new Set(LESSONS.map(L => L.id)).size !== LESSONS.length) errs.push('레슨 id 중복');
+    SUBJECTS.filter(x => x.data).flatMap(x => Object.values(x.data.exam).flat()).forEach(q => {
+      if (q.t === 'short') { if (!q.a.length) errs.push('단답형 형식: ' + q.k); }
       else if (!q.w || q.w.length < 3 || q.w.includes(q.a) || new Set(q.w).size !== q.w.length) errs.push('객관식 보기: ' + q.k);
     });
-    Object.entries(SUMMARY).forEach(([u, secs]) => secs.forEach(s => {
+    SUBJECTS.filter(x => x.data).flatMap(x => Object.entries(x.data.summary)).forEach(([u, secs]) => secs.forEach(s => {
       (s.words || []).forEach(h => { if (!WORDS[h]) errs.push(`요약 ${u}: 없는 어휘 ${h}`); });
       (s.sents || []).forEach(id => { if (!SENTS[id]) errs.push(`요약 ${u}: 없는 문장 ${id}`); });
     }));

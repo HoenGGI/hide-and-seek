@@ -11,7 +11,7 @@ from fontTools.ttLib import TTCollection
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = '/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc'
 
-text = ''.join(p.read_text(encoding='utf-8') for p in (ROOT / 'data.js', ROOT / 'subjects.js', ROOT / 'exams.js', ROOT / 'app.js', ROOT / 'index.html'))
+text = ''.join(p.read_text(encoding='utf-8') for p in (ROOT / 'data.js', ROOT / 'history.js', ROOT / 'subjects.js', ROOT / 'exams.js', ROOT / 'app.js', ROOT / 'index.html'))
 hanja = sorted(set(re.findall(r'[㐀-鿿豈-﫿]', text)))
 hangul = sorted(set(re.findall(r'[가-힣]', text)))
 extra = '〈〉《》「」·,.?!()~0123456789 '
