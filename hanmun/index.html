@@ -105,6 +105,42 @@ a.btn{text-decoration:none}
 .sprog .gbar{flex:1;height:10px}
 .sprog .gbar i{background:var(--uc)}
 .sprog small{color:var(--mute);font-weight:700;font-size:13px;min-width:3.2em;text-align:right}
+/* 시험 D-day · 시간표 · 범위 */
+.xbanner{display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:14px 16px 0;padding:12px 14px;border-radius:16px;text-align:left;
+  background:var(--inkc);color:#fff;box-shadow:0 4px 0 var(--inkc-d)}
+.xbanner:active{transform:translateY(3px);box-shadow:0 1px 0 var(--inkc-d)}
+.soonpage .xbanner{width:100%;margin:0 0 18px}
+.xbd{flex:none;min-width:62px;padding:6px 8px;border-radius:12px;background:var(--gold);color:#2A2100;font-weight:900;font-size:19px;text-align:center}
+.xbt{flex:1;display:flex;flex-direction:column;min-width:0}.xbt b{font-size:16px}.xbt small{font-size:13px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xbgo{flex:none;font-size:12px;font-weight:800;opacity:.85}
+.backlink{color:var(--sky);font-weight:800;font-size:15px;padding:4px 0;margin-bottom:8px}
+.xhero{display:flex;align-items:center;gap:12px;padding:16px;border-radius:18px;background:var(--inkc);color:#fff;box-shadow:0 4px 0 var(--inkc-d)}
+.xhero>div{flex:1}.xhero h1{font-size:22px;font-weight:900}.xhero p{font-size:14px;opacity:.85;margin-top:2px}
+.xheroD{flex:none;padding:8px 12px;border-radius:14px;background:var(--gold);color:#2A2100;font-weight:900;font-size:22px}
+.xday{border:2px solid var(--line);border-radius:16px;padding:10px 12px 12px;margin-bottom:10px}
+.xday.today{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 30%,transparent)}
+.xday.past{opacity:.5}
+.xdh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.xdh b{font-size:16px}
+.xdh span{font-size:13px;font-weight:900;color:var(--mute)}.xday.today .xdh span{color:var(--gold-d)}
+.xslot{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:12px;margin-top:6px;text-align:left;background:var(--ucl)}
+.xslot.rest{background:var(--bg2);color:var(--mute)}
+.xper{flex:none;width:3.2em;font-weight:900;font-size:14px;color:var(--uc)}.xslot.rest .xper{color:var(--mute)}
+.xtime{flex:1;display:flex;flex-direction:column;font-size:14px;font-weight:700;line-height:1.3}.xtime small{font-size:11px;color:var(--mute);font-weight:600}
+.xsj{display:flex;align-items:center;gap:6px;font-weight:900;font-size:16px;color:var(--ink)}.xslot.rest .xsj{font-size:14px;font-weight:700;color:var(--mute)}
+.xsj .smk{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--uc);color:#fff;font-size:12px}
+.xnote{font-size:13px;color:var(--mute);margin-top:2px}
+.xsub{border:2px solid var(--line);border-left:6px solid var(--uc);border-radius:16px;padding:12px 14px;margin-bottom:10px;background:var(--card);text-align:left;width:100%}
+.xsh{display:flex;align-items:center;gap:8px}
+.xsh .smk{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--uc);color:#fff;font-size:13px;font-weight:900;flex:none}
+.xsh b{font-size:17px;font-weight:900}
+.xwhen{margin-left:auto;font-size:12px;font-weight:800;color:var(--uc);background:var(--ucl);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.xsub ul{margin:8px 0 6px;padding-left:20px;font-size:15px;line-height:1.6}
+.xmat{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink2);font-weight:700}
+.xtip{font-size:13px;color:var(--mute);margin-top:6px;line-height:1.5}
+.xquiz{width:100%;margin-top:10px;min-height:44px;font-size:15px}
+.xsub.compact{margin:16px 0 4px}
+.xafter{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.xafter div{display:flex;gap:12px;padding:10px 12px;border:2px solid var(--line);border-radius:12px}.xafter b{flex:none;min-width:9.5em}
 .brand{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
 .brandname{font-weight:900;font-size:19px;letter-spacing:-.02em;color:var(--jade);white-space:nowrap}
 .stat{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:12px;font-weight:800;font-size:17px}
@@ -541,6 +577,7 @@ a.btn{text-decoration:none}
 <div id="modal" hidden></div>
 <script src="data.js"></script>
 <script src="subjects.js"></script>
+<script src="exams.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -947,7 +947,7 @@ function renderTop() {
   top.innerHTML = `<div class="toprow"><div class="brand"><span class="brandname">하루한입</span></div>
     <button class="stat flame ${st ? '' : 'off'}" data-go="profile" aria-label="연속 학습 ${st}일">${icon('flame', 24)}<b>${st}</b></button>
     <button class="stat xp" data-go="profile" aria-label="총 ${S.xp} XP">${icon('bolt', 24)}<b>${S.xp}</b></button></div>
-    ${TAB === 'profile' ? '' : `<div class="subjects" role="tablist" aria-label="과목">${SUBJECTS.map(s => `<button role="tab" aria-selected="${s === cur}"
+    ${TAB === 'profile' || TAB === 'exam' ? '' : `<div class="subjects" role="tablist" aria-label="과목">${SUBJECTS.map(s => `<button role="tab" aria-selected="${s === cur}"
       class="subj c-${s.color}${s === cur ? ' on' : ''}${s.ready ? '' : ' soon'}" data-subj="${s.id}">${subMark(s)}${esc(s.name)}</button>`).join('')}</div>`}`;
   const on = $('.subj.on', top); if (on) on.parentElement.scrollLeft = on.offsetLeft - 60;
   document.documentElement.style.setProperty('--toph', top.offsetHeight + 'px');
@@ -956,14 +956,75 @@ function renderTop() {
 const josa = (w, a, b) => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b; };
 function renderSoon(sub, tab) {
   const what = { learn: '레슨', quiz: '퀴즈', notes: '요약', review: '복습' }[tab] || '내용';
-  return `<div class="page soonpage c-${sub.color}">
+  return `<div class="page soonpage c-${sub.color}">${tab === 'learn' ? examBanner() : ''}
     <div class="soonmark${isHz(sub.mark) ? ' hz' : ''}">${esc(sub.mark)}</div>
     <h1>${esc(sub.name)}</h1><span class="soonbadge">준비 중</span>
     <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 추가되면 여기에서 열려요.<br>
       교과서나 학습지, 공책 사진으로 한문처럼 레슨 · 퀴즈 · 요약 · 복습을 만들 수 있어요.</p>
+    ${examRange(sub.id, true)}
     ${tab === 'learn' ? `<div class="soonpath">${[0, 1, 2, 3, 4].map(i => `<div class="nrow" style="--x:${Math.round(Math.sin(i * 0.95) * 64)}px"><span class="node locked">${icon('lock', 30)}</span></div>`).join('')}</div>`
       : ''}
     <button class="btn wide ghost" data-subj="hanmun">한문 공부하러 가기</button>
+  </div>`;
+}
+
+/* ════════ 시험 시간표 · 범위 (exams.js) ════════ */
+const WD = ['일', '월', '화', '수', '목', '금', '토'];
+const keyDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const daysUntil = k => Math.round((keyDate(k) - keyDate(today())) / 86400000);
+const dateLabel = k => { const d = keyDate(k); return `${d.getMonth() + 1}월 ${d.getDate()}일(${WD[d.getDay()]})`; };
+const ddLabel = k => { const n = daysUntil(k); return n > 0 ? `D-${n}` : n === 0 ? 'D-day' : '끝'; };
+const examOn = () => typeof EXAM_INFO !== 'undefined' && EXAM_INFO.days.length && daysUntil(EXAM_INFO.days[EXAM_INFO.days.length - 1].date) >= 0;
+const examSubs = d => d.slots.filter(s => s[1]).map(s => EXAM_INFO.subjects[s[1]].name);
+// 과목이 언제 시험인지: "12월 3일(목) 3교시"
+function examWhen(id) {
+  for (const d of EXAM_INFO.days) { const s = d.slots.find(x => x[1] === id); if (s) return { date: d.date, period: s[0] }; }
+  return null;
+}
+// 학습 화면 맨 위의 D-day 카드 (시험이 끝나면 사라짐)
+function examBanner() {
+  if (!examOn()) return '';
+  const first = EXAM_INFO.days[0], n = daysUntil(first.date);
+  const todayDay = EXAM_INFO.days.find(d => daysUntil(d.date) === 0);
+  const nextDay = EXAM_INFO.days.find(d => daysUntil(d.date) >= 0);
+  const big = n > 0 ? `D-${n}` : '시험 중';
+  const sub = todayDay ? `오늘: ${examSubs(todayDay).join(' · ')}` : n > 0 ? `${dateLabel(first.date)} ${examSubs(first).join(' · ')}부터` : `다음: ${dateLabel(nextDay.date)} ${examSubs(nextDay).join(' · ')}`;
+  return `<button class="xbanner" data-go="exam"><span class="xbd">${big}</span><span class="xbt"><b>${esc(EXAM_INFO.title)}</b><small>${esc(sub)}</small></span><span class="xbgo">시간표 · 범위 ›</span></button>`;
+}
+// 과목 하나의 시험 범위 카드
+function examRange(id, compact) {
+  if (typeof EXAM_INFO === 'undefined') return '';
+  const x = EXAM_INFO.subjects[id]; if (!x) return '';
+  const w = examWhen(id);
+  return `<div class="xsub c-${x.color}${compact ? ' compact' : ''}" id="xr-${id}">
+    <div class="xsh"><span class="smk${isHz(x.mark) ? ' hz' : ''}">${esc(x.mark)}</span><b>${compact ? '시험 범위' : esc(x.name)}</b>
+      ${w ? `<span class="xwhen">${dateLabel(w.date)} ${w.period}교시</span>` : ''}</div>
+    <ul>${x.range.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
+    <p class="xmat">${icon('book', 16)} ${esc(x.material)}</p>
+    ${x.tip ? `<p class="xtip">${esc(x.tip)}</p>` : ''}
+    ${!compact && SUBJECTS.some(s => s.id === id && s.ready) ? `<button class="btn ghost xquiz" data-xquiz="${id}">${icon('quiz', 18)} ${esc(x.name)} 퀴즈 풀기 (20문제)</button>` : ''}
+  </div>`;
+}
+function renderExam() {
+  const E = EXAM_INFO, first = E.days[0].date, last = E.days[E.days.length - 1].date, n = daysUntil(first);
+  const order = E.days.flatMap(d => d.slots.filter(s => s[1]).map(s => s[1]));
+  return `<div class="page exam">
+    <button class="backlink" data-go="learn">‹ 학습으로</button>
+    <div class="xhero"><div><h1>${esc(E.title)}</h1><p>${esc(E.grade)} · ${dateLabel(first)} ~ ${dateLabel(last)}</p></div>
+      <span class="xheroD">${daysUntil(last) < 0 ? '끝' : n > 0 ? `D-${n}` : '시험 중'}</span></div>
+    <h2 class="sect">시험 시간표</h2>
+    ${E.days.map(d => {
+      const dn = daysUntil(d.date);
+      return `<div class="xday${dn === 0 ? ' today' : dn < 0 ? ' past' : ''}"><div class="xdh"><b>${dateLabel(d.date)}</b><span>${ddLabel(d.date)}</span></div>
+      ${d.slots.map(([p, id]) => { const x = id && E.subjects[id], pr = E.periods[p];
+        return `<${x ? `button data-xr="${id}"` : 'div'} class="xslot${x ? ` c-${x.color}` : ' rest'}"><span class="xper">${p}교시</span><span class="xtime">${pr.time}${x ? `<small>입실 ${pr.enter}</small>` : ''}</span>
+          <span class="xsj">${x ? `<span class="smk${isHz(x.mark) ? ' hz' : ''}">${esc(x.mark)}</span>${esc(x.name)}` : '교과수업'}</span></${x ? 'button' : 'div'}>`; }).join('')}
+      </div>`; }).join('')}
+    <p class="xnote">${esc(E.note)}</p>
+    <h2 class="sect">시험 범위</h2>
+    ${order.map(id => examRange(id)).join('')}
+    <h2 class="sect">시험 끝난 뒤</h2>
+    <div class="xafter">${E.after.map(([a, b]) => `<div><b>${esc(a)}</b><span>${esc(b)}</span></div>`).join('')}</div>
   </div>`;
 }
 
@@ -977,7 +1038,7 @@ function lessonState(L, idx) {
 }
 function renderLearn() {
   const goal = S.settings.goal, tx = todayXp(), pct = Math.min(100, Math.round(tx / goal * 100));
-  let gi = 0, html = `<div class="goalcard"><div class="gtxt"><b>오늘의 목표</b><span>${tx} / ${goal} XP</span></div><div class="gbar"><i style="width:${pct}%"></i></div>${pct >= 100 ? `<span class="gdone">${icon('check', 16)} 달성</span>` : ''}</div>`;
+  let gi = 0, html = examBanner() + `<div class="goalcard"><div class="gtxt"><b>오늘의 목표</b><span>${tx} / ${goal} XP</span></div><div class="gbar"><i style="width:${pct}%"></i></div>${pct >= 100 ? `<span class="gdone">${icon('check', 16)} 달성</span>` : ''}</div>`;
   UNITS.forEach((u, ui) => {
     html += `<section class="unit c-${u.color}" id="${u.id}">
       <header class="uhead"><div><small>${esc(u.no)}</small><h2>${esc(u.title)}</h2><p>${esc(u.sub)}</p></div>
@@ -1150,7 +1211,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="haruhanip.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">하루한입 v1.5 · 매일 한 입씩, 꾸준히</p></div>`;
+    <p class="about">하루한입 v1.6 · 매일 한 입씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1186,7 +1247,7 @@ function show(tab, opts = {}) {
   $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   renderTop();
   const v = $('#view'), sub = curSub();
-  v.innerHTML = tab === 'profile' ? renderProfile() : !sub.ready ? renderSoon(sub, tab)
+  v.innerHTML = tab === 'profile' ? renderProfile() : tab === 'exam' ? renderExam() : !sub.ready ? renderSoon(sub, tab)
     : tab === 'learn' ? renderLearn() : tab === 'review' ? renderReview() : tab === 'notes' ? renderNotes() : renderQuiz();
   if (tab === 'learn' && sub.ready) requestAnimationFrame(() => scrollToCurrent(false));
   else if (opts.unit) requestAnimationFrame(() => { const s = document.getElementById(opts.unit) || $(`.nunit.c-${UNITS.find(u => u.id === opts.unit).color}`); if (s) s.scrollIntoView(); });
@@ -1215,6 +1276,8 @@ document.addEventListener('click', ev => {
   const qu = t.closest('[data-qu]'); if (qu) { sfx.tap(); QUIZ_U = qu.dataset.qu; const y = scrollY; show('quiz'); window.scrollTo(0, y); return; }
   const qn = t.closest('[data-qn]'); if (qn) { sfx.tap(); QUIZ_N = +qn.dataset.qn; const y = scrollY; show('quiz'); window.scrollTo(0, y); return; }
   if (t.closest('[data-qstart]')) { startQuiz(QUIZ_U, QUIZ_N); return; }
+  const xr = t.closest('[data-xr]'); if (xr) { const el = document.getElementById('xr-' + xr.dataset.xr); if (el) window.scrollTo({ top: scrollY + el.getBoundingClientRect().top - $('#top').offsetHeight - 12, behavior: reduceMotion() ? 'auto' : 'smooth' }); return; }
+  const xq = t.closest('[data-xquiz]'); if (xq) { S.subject = xq.dataset.xquiz; save(); QUIZ_U = 'all'; TAB = 'quiz'; startQuiz('all', 20); return; }
   const qz = t.closest('[data-quizunit]'); if (qz) { QUIZ_U = qz.dataset.quizunit; TAB = 'quiz'; startQuiz(QUIZ_U, 10); return; }
   const sg = t.closest('[data-subj-go]'); if (sg) { sfx.tap(); S.subject = sg.dataset.subjGo; save(); show('learn'); return; }
   const sj = t.closest('[data-subj]');

@@ -250,7 +250,7 @@ const UNITS = [
       { t: '4단원 복습', review: true }]
   },
   {
-    id: 'u5', no: '5단원', title: '김만덕, 나눔을 실천하다', sub: '《번암집》 · 굶주린 이웃을 살린 이야기', color: 'ochre', lessons: [
+    id: 'u5', no: '5단원', title: '김만덕의 나눔', sub: '19과 · 《번암집》 · 굶주린 이웃을 살린 이야기', color: 'ochre', lessons: [
       {
         t: '萬德은 取十之一', notes: ['mandeok'], sents: ['md1'], quiz: [
           { q: '만덕이 친족을 살리는 데 쓴 쌀은 전체의 얼마일까요?', a: '십분의 일 (十之一)', w: ['십분의 구 (十之九)', '절반', '전부'] },

@@ -1,6 +1,6 @@
 // Offline cache for the web version. Bump VERSION whenever the app files change.
-const VERSION = 'haruhanip-v6';
-const FILES = ['./', 'index.html', 'app.js', 'data.js', 'subjects.js', 'hanja.woff2', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
+const VERSION = 'haruhanip-v7';
+const FILES = ['./', 'index.html', 'app.js', 'data.js', 'subjects.js', 'exams.js', 'hanja.woff2', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
