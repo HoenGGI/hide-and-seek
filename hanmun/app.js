@@ -365,7 +365,7 @@ const X = {
   exam(q) {
     // 문제 상자: 한자만 있으면 크게, 아니면 보기 상자로
     const onlyHz = q.p && hzOf(q.p).length === q.p.replace(/\s/g, '').length;
-    const box = !q.p ? '' : onlyHz ? `<div class="bighz hz word">${esc(q.p)}</div>` : `<div class="qbox">${hzWrap(q.p)}</div>`;
+    const box = !q.p ? '' : onlyHz ? `<div class="bighz hz word">${esc(q.p)}</div>` : `<div class="qbox${q.p.length > 50 ? ' long' : ''}">${hzWrap(q.p)}</div>`;
     if (q.t === 'seq') {
       let tiles = shuffle(q.a), guard = 0;
       while (tiles.join() === q.a.join() && guard++ < 8) tiles = shuffle(q.a);
@@ -1272,7 +1272,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.9 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.10 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
