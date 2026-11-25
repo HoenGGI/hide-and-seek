@@ -1169,7 +1169,7 @@ function renderQuiz() {
     <div class="chips wrap">${chips.map(([id, t]) => `<button class="chip ${QUIZ_U === id ? 'on' : ''}" data-qu="${id}">${t}</button>`).join('')}</div>
     <p class="qrange">${sel ? `${esc(sel.no)} · ${esc(sel.title)}` : `${esc(curSub().name)} ${qunits.length}개 단원 전체에서 골고루`}</p>
     <h2 class="sect">문항 수</h2>
-    <div class="goals">${[10, 20].map(n => `<button class="chip ${QUIZ_N === n ? 'on' : ''}" data-qn="${n}">${n}문제<small>${n === 10 ? '약 5분' : '약 10분'}</small></button>`).join('')}</div>
+    <div class="goals">${[10, 20, 30].map(n => `<button class="chip ${QUIZ_N === n ? 'on' : ''}" data-qn="${n}">${n}문제<small>약 ${n / 2}분</small></button>`).join('')}</div>
     <button class="btn wide qstart" data-qstart="1">${icon('quiz', 22)} 퀴즈 시작</button>
     <h2 class="sect">최근 기록${best != null ? `<span class="qbest">최고 ${best}점</span>` : ''}</h2>
     ${hist.length ? `<div class="qhist">${hist.map(h => `<div class="qh"><span class="qhs ${h.s >= 90 ? 'hi' : h.s >= 70 ? 'mid' : 'lo'}">${h.s}</span>
@@ -1318,7 +1318,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.13 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.14 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
