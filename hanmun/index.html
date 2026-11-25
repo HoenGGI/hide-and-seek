@@ -463,6 +463,19 @@ a.btn{text-decoration:none}
 /* 퀴즈 */
 .qcount{font-weight:900;color:var(--ink2);font-size:16px;min-width:52px;text-align:right}
 .qcount b{color:var(--sky)}
+.qtimer{font-weight:900;font-size:15px;color:var(--ink2);font-variant-numeric:tabular-nums;padding:3px 9px;border-radius:99px;background:var(--bg2);border:2px solid var(--line)}
+.qtimer.low{color:var(--heart);border-color:currentColor}
+.mocklead{color:var(--ink2);font-size:14px;margin:-4px 0 10px}
+.mocks{display:flex;flex-direction:column;gap:10px}
+.mock{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 16px;border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.mock:active{transform:translateY(2px);border-bottom-width:2px}
+.mock .mno{flex:none;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:15px;color:#fff;background:var(--sky)}
+.mock .mtx{flex:1;min-width:0;display:flex;flex-direction:column}
+.mock .mtx b{font-size:16.5px}.mock .mtx small{color:var(--ink2);font-size:13px;font-weight:700}
+.mock .mbest{flex:none;font-weight:900;font-size:22px}.mock .mbest small{font-size:12px;margin-left:1px}
+.mock .mbest.hi{color:var(--jade)}.mock .mbest.mid{color:var(--sky)}.mock .mbest.lo{color:var(--heart)}
+.mock .mgo{flex:none;color:var(--ink2)}
+.mocktime{color:var(--ink2);font-weight:700;font-size:14px;margin-top:4px}
 .quizmode .pbar i{background:var(--sky)}
 .quizmode .hzline .hc.hint{border-bottom-color:transparent;cursor:default}
 .fbtns{display:flex;gap:10px}

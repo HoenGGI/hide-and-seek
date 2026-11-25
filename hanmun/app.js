@@ -147,6 +147,9 @@ const tokens = s => s.m.split(' ');
     });
     (sb.data.exam[u.id] || []).forEach((q, i) => { q.k = 'x:' + u.id + ':' + i; q.kind = 'exam'; q.u = u.id; BYKEY[q.k] = q; });
   }));
+  SUBJECTS.filter(sb => sb.data && sb.data.mock).forEach(sb => sb.data.mock.forEach(m => m.items.forEach((q, i) => {
+    q.k = 'm:' + m.id + ':' + i; q.kind = 'exam'; q.u = q.u || sb.data.units[0].id; BYKEY[q.k] = q;
+  })));
 })();
 
 function unitItems(uids) {
@@ -601,12 +604,13 @@ function startLesson(cfg) {
   el.hidden = false; document.body.classList.add('in-lesson'); el.classList.toggle('quizmode', quiz);
   el.innerHTML = `<div class="lhead"><button class="iconbtn" id="lquit" aria-label="그만하기">${icon('x', 26)}</button>
     <div class="pbar" role="progressbar" aria-label="진행도"><i></i><span class="combo"></span></div>
-    ${quiz ? `<div class="qcount"><b>1</b>/${LS.total}</div>` : ''}</div>
+    ${LS.limit ? `<div class="qtimer" aria-live="off">${fmtClock(LS.limit)}</div>` : ''}${quiz ? `<div class="qcount"><b>1</b>/${LS.total}</div>` : ''}</div>
     <div class="lbody"><div class="lin"></div></div><div class="lfoot"><div class="fb"></div><div class="fbtns"><button class="btn ghost" id="lskip">건너뛰기</button><button class="btn wide" id="lcheck" disabled>확인</button></div></div>
     <div class="tip" hidden></div>`;
   $('#lquit').onclick = () => confirmQuit();
   $('#lcheck').onclick = () => onMain();
   $('#lskip').onclick = () => quiz ? quizRecord(true) : skipEx();
+  if (LS.limit) startTimer();
   renderEx();
 }
 function setProgress(anim) {
@@ -790,7 +794,7 @@ function nextEx() {
   if (LS.i >= LS.q.length) finishLesson(); else renderEx();
 }
 function closeLesson() {
-  LS = null; CUR = null; hideTip(); closeModal();
+  stopTimer(); LS = null; CUR = null; hideTip(); closeModal();
   const el = lessonEl(); el.hidden = true; el.innerHTML = ''; document.body.classList.remove('in-lesson');
   renderTop(); show(TAB);
 }
@@ -877,10 +881,12 @@ function qReview(l, i) {
     ${e.exp ? `<div class="qre">${hzWrap(e.exp)}</div>` : ''}</div>`;
 }
 function finishQuiz() {
+  stopTimer();
   const n = LS.log.length, right = LS.log.filter(l => l.ok).length, score = Math.round(right / n * 100);
   const xp = 5 + Math.round(score / 10) + (score === 100 ? 5 : 0);
   const { first, wasGoal } = award(xp);
   S.quiz = [{ d: today(), r: LS.title, n, s: score }, ...(S.quiz || [])].slice(0, 30);
+  if (LS.mockId) { S.mock = S.mock || {}; const m = S.mock[LS.mockId] || { best: 0, n: 0 }; S.mock[LS.mockId] = { best: Math.max(m.best, score), n: m.n + 1, last: score }; }
   save();
   sfx.done(); buzz(40);
   CUR = null;
@@ -891,6 +897,7 @@ function finishQuiz() {
     <div class="qtop"><div class="qscore" style="--p:${score}"><div class="qsin"><b>${score}</b><small>점</small></div>
       ${score >= 90 ? '<div class="seal"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>' : ''}</div></div>
     <h2>${msg}</h2><p class="dsub">${esc(LS.title)} · ${n}문제 중 ${right}문제 정답 · +${xp} XP</p>
+    ${LS.mockId ? `<p class="mocktime">${LS.timeUp ? '시간이 다 되어 남은 문제는 틀린 것으로 채점했어요' : `걸린 시간 ${fmtClock(Math.round((Date.now() - LS.t0) / 1000))} / ${LS.limit / 60}분`}</p>` : ''}
     ${wrongN ? `<button class="btn wide red" data-qretry>${icon('refresh', 20)} 틀린 ${wrongN}문제 다시 풀기</button>` : ''}
     <h3 class="sect">문제 다시 보기</h3>
     <div class="qlist">${LS.log.map(qReview).join('')}</div></div>`;
@@ -1157,7 +1164,8 @@ function renderQuiz() {
   const best = (S.quiz || []).length ? Math.max(...S.quiz.map(h => h.s)) : null;
   return `<div class="page quiz"><h1 class="ptitle">퀴즈</h1>
     <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점해요. 틀린 문제는 오답 노트에 모여요.</p>
-    <h2 class="sect">범위</h2>
+    ${mockCards()}
+    <h2 class="sect">연습 퀴즈 범위</h2>
     <div class="chips wrap">${chips.map(([id, t]) => `<button class="chip ${QUIZ_U === id ? 'on' : ''}" data-qu="${id}">${t}</button>`).join('')}</div>
     <p class="qrange">${sel ? `${esc(sel.no)} · ${esc(sel.title)}` : `${esc(curSub().name)} ${qunits.length}개 단원 전체에서 골고루`}</p>
     <h2 class="sect">문항 수</h2>
@@ -1168,6 +1176,44 @@ function renderQuiz() {
       <span class="qht"><b>${esc(h.r)}</b><small>${h.d.slice(5).replace('-', '월 ')}일 · ${h.n}문제</small></span></div>`).join('')}</div>`
       : `<p class="empty">아직 푼 퀴즈가 없어요. 첫 퀴즈에 도전해 보세요!</p>`}
   </div>`;
+}
+
+function mockCards() {
+  const ms = SU().mock || [];
+  if (!ms.length) return '';
+  return `<h2 class="sect">모의고사</h2><p class="mocklead">학교 시험처럼 정해진 ${ms[0].items.length}문항을 ${ms[0].min}분 안에 풀어요. 문항당 ${Math.round(100 / ms[0].items.length)}점.</p>
+    <div class="mocks">${ms.map((m, i) => { const r = (S.mock || {})[m.id];
+      return `<button class="mock" data-mock="${i}"><span class="mno">${esc(m.t)}</span>
+        <span class="mtx"><b>${esc(curSub().name)} 모의고사 ${esc(m.t)}</b><small>${m.items.length}문항 · ${m.min}분${r ? ` · ${r.n}번 풂` : ''}</small></span>
+        ${r ? `<span class="mbest ${r.best >= 90 ? 'hi' : r.best >= 70 ? 'mid' : 'lo'}">${r.best}<small>점</small></span>` : `<span class="mgo">${icon('quiz', 20)}</span>`}</button>`; }).join('')}</div>`;
+}
+function startMock(i) {
+  const m = SU().mock[i];
+  modal(`<h3>${esc(curSub().name)} 모의고사 ${esc(m.t)}</h3><p>${m.items.length}문항 · 제한 시간 ${m.min}분이에요. 시간이 다 되면 남은 문제는 틀린 것으로 채점해요.</p>
+    <button class="btn wide" data-act="go">시작하기</button><button class="btn wide ghost" data-act="no">다음에</button>`,
+    { go: () => { closeModal(); startLesson({ mode: 'quiz', mockId: m.id, limit: m.min * 60, title: `${curSub().name} 모의고사 ${m.t}`, ex: m.items.map(X.exam) }); }, no: closeModal });
+}
+const fmtClock = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+let TIMER = null;
+function startTimer() {
+  stopTimer();
+  TIMER = setInterval(() => {
+    if (!LS || !LS.limit) return stopTimer();
+    const left = Math.max(0, LS.limit - Math.floor((Date.now() - LS.t0) / 1000));
+    const el = $('.qtimer', lessonEl()); if (el) { el.textContent = fmtClock(left); el.classList.toggle('low', left <= 300); }
+    if (left === 0) timeUp();
+  }, 1000);
+}
+function stopTimer() { if (TIMER) { clearInterval(TIMER); TIMER = null; } }
+// 시간이 다 되면 남은 문제를 답하지 않은 것으로 기록하고 채점
+function timeUp() {
+  stopTimer(); if (!LS || LS.log.length >= LS.q.length) return;
+  LS.timeUp = true; closeModal();
+  for (let i = LS.log.length; i < LS.q.length; i++) {
+    const e = LS.q[i]; LS.log.push({ e, ok: false, mine: '(시간 종료)', d: '' }); LS.wrong++;
+    if (e.key) S.wrong[e.key] = (S.wrong[e.key] || 0) + 1;
+  }
+  save(); toast('시간이 다 되었어요'); finishQuiz();
 }
 
 /* ════════ 요약 · 노트 화면 ════════ */
@@ -1272,7 +1318,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.12 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.13 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1337,6 +1383,7 @@ document.addEventListener('click', ev => {
   const qu = t.closest('[data-qu]'); if (qu) { sfx.tap(); QUIZ_U = qu.dataset.qu; const y = scrollY; show('quiz'); window.scrollTo(0, y); return; }
   const qn = t.closest('[data-qn]'); if (qn) { sfx.tap(); QUIZ_N = +qn.dataset.qn; const y = scrollY; show('quiz'); window.scrollTo(0, y); return; }
   if (t.closest('[data-qstart]')) { startQuiz(QUIZ_U, QUIZ_N); return; }
+  const mk = t.closest('[data-mock]'); if (mk) { sfx.tap(); startMock(+mk.dataset.mock); return; }
   const xr = t.closest('[data-xr]'); if (xr) { const el = document.getElementById('xr-' + xr.dataset.xr); if (el) window.scrollTo({ top: scrollY + el.getBoundingClientRect().top - $('#top').offsetHeight - 12, behavior: reduceMotion() ? 'auto' : 'smooth' }); return; }
   const xq = t.closest('[data-xquiz]'); if (xq) { S.subject = xq.dataset.xquiz; save(); QUIZ_U = 'all'; TAB = 'quiz'; startQuiz('all', 20); return; }
   const qz = t.closest('[data-quizunit]'); if (qz) { QUIZ_U = qz.dataset.quizunit; TAB = 'quiz'; startQuiz(QUIZ_U, 10); return; }
