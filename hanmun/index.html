@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14161B" media="(prefers-color-scheme: dark)">
-<meta name="description" content="2학년 2학기 한문을 듀오링고처럼 매일 조금씩 익히는 앱">
-<title>일일신 日日新</title>
+<meta name="description" content="국어 · 역사 · 한문 · 과학을 듀오링고처럼 매일 한 입씩 공부하는 앱">
+<title>하루한입</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -98,7 +98,6 @@ a.btn{text-decoration:none}
 .soontxt{color:var(--ink2);font-size:15px;line-height:1.65;max-width:26em;margin:6px 0 4px}
 .soonpath{display:flex;flex-direction:column;align-items:center;gap:18px;padding:22px 0 26px;opacity:.7}
 .soonpath .node{cursor:default}
-.soonmascot{padding:18px 0 22px}
 .soonpage>.btn{max-width:360px}
 .sprogs{display:flex;flex-direction:column;gap:8px}
 .sprog{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:14px;text-align:left}
@@ -106,9 +105,8 @@ a.btn{text-decoration:none}
 .sprog .gbar{flex:1;height:10px}
 .sprog .gbar i{background:var(--uc)}
 .sprog small{color:var(--mute);font-weight:700;font-size:13px;min-width:3.2em;text-align:right}
-.brand{flex:1;display:flex;align-items:center}
-.seal-mini{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--seal);color:#fff;font-size:15px;line-height:1;
-  writing-mode:vertical-rl;letter-spacing:2px;box-shadow:0 3px 0 #A3261C}
+.brand{flex:1;display:flex;align-items:center;gap:6px;min-width:0}
+.brandname{font-weight:900;font-size:19px;letter-spacing:-.02em;color:var(--jade);white-space:nowrap}
 .stat{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:12px;font-weight:800;font-size:17px}
 .stat:active{background:var(--bg2)}
 .stat.flame{color:var(--flame)}.stat.flame.off{color:var(--mute)}
@@ -151,8 +149,6 @@ a.btn{text-decoration:none}
   padding:7px 14px;border-radius:12px;border:2px solid var(--line);white-space:nowrap;animation:bob 1.3s ease-in-out infinite;pointer-events:none}
 .startbub::after{content:'';position:absolute;left:50%;top:100%;width:12px;height:12px;background:var(--card);border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:translate(-50%,-6px) rotate(45deg)}
 @keyframes bob{50%{transform:translate(-50%,-6px)}}
-.pathmascot{transform:translateX(var(--x));height:0;position:relative;z-index:0;top:-60px;pointer-events:none}
-.pathmascot .mascot{animation:float 3.2s ease-in-out infinite}
 @keyframes float{50%{transform:translateY(-6px) rotate(-3deg)}}
 .npop{position:absolute;top:calc(100% + 16px);left:50%;width:min(300px,calc(100vw - 32px));transform:translate(calc(-50% - var(--x)),-6px) scale(.96);opacity:0;z-index:15;
   background:var(--uc);color:#fff;border-radius:18px;padding:16px;box-shadow:0 5px 0 var(--ucd);transition:opacity .15s,transform .15s;display:flex;flex-direction:column;gap:6px}
@@ -398,7 +394,6 @@ a.btn{text-decoration:none}
 
 /* 레슨 완료 */
 .done,.streak{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:16px 0}
-.seal-wrap{position:relative;padding:10px 40px 0}
 .seal{position:absolute;right:-6px;top:-4px;width:86px;height:86px;border-radius:50%;border:4px solid var(--seal);color:var(--seal);display:grid;
   grid-template-columns:1fr 1fr;place-content:center;place-items:center;font-weight:900;font-size:15px;line-height:1.05;transform:rotate(-14deg);
   animation:stamp .45s .5s cubic-bezier(.2,1.6,.4,1) both;background:color-mix(in srgb,var(--bg) 70%,transparent)}
@@ -512,8 +507,7 @@ a.btn{text-decoration:none}
 .squiz{margin:4px 16px 16px;width:calc(100% - 32px)}
 
 /* 마스코트 */
-.mascot .m-body{fill:var(--body);stroke:var(--body-line);stroke-width:2}
-.done .mascot{animation:hop .9s ease .2s 2}
+.seal.big{position:relative;right:auto;top:auto;width:132px;height:132px;font-size:24px;border-width:6px;margin:6px 0 4px}
 @keyframes hop{30%{transform:translateY(-14px)}60%{transform:translateY(0)}}
 
 /* 힌트, 모달, 토스트 */

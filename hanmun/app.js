@@ -1,4 +1,4 @@
-// 일일신(日日新) — 듀오링고식 한문 학습 앱. 내용은 data.js, 화면 구조와 스타일은 index.html.
+// 하루한입 — 듀오링고식 과목별 학습 앱 (지금은 한문). 내용은 data.js, 화면 구조와 스타일은 index.html.
 'use strict';
 
 /* ════════ 작은 도구 ════════ */
@@ -42,29 +42,9 @@ const ICON = {
 };
 const icon = (n, s = 24, cls = '') => `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
 
-// 마스코트 '먹동이' — 이마에 새싹이 난 먹물 방울
-function mascot(mood = 'happy', size = 96) {
-  const eyes = mood === 'cheer'
-    ? '<path d="M31 70q7-8 14 0M55 70q7-8 14 0" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/>'
-    : `<ellipse cx="38" cy="69" rx="8" ry="9.5" fill="#fff"/><ellipse cx="62" cy="69" rx="8" ry="9.5" fill="#fff"/>
-       <circle cx="${mood === 'sad' ? 38 : 39.5}" cy="${mood === 'sad' ? 72 : 71}" r="4.6" fill="#191A22"/><circle cx="${mood === 'sad' ? 62 : 63.5}" cy="${mood === 'sad' ? 72 : 71}" r="4.6" fill="#191A22"/>
-       <circle cx="41" cy="68.5" r="1.7" fill="#fff"/><circle cx="65" cy="68.5" r="1.7" fill="#fff"/>`;
-  const mouth = mood === 'sad'
-    ? '<path d="M43 89q7-6 14 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M28 78q-2 5 0 7q2-2 0-7z" fill="#7CC8FF"/>'
-    : mood === 'cheer'
-      ? '<path d="M39 81h22q-2 13-11 13t-11-13z" fill="#E8505B"/><path d="M43 88q7 5 14 0" fill="#FF9AA5"/>'
-      : '<path d="M42 82q8 9 16 0z" fill="#E8505B"/>';
-  return `<svg class="mascot ${mood}" width="${size}" height="${Math.round(size * 1.16)}" viewBox="0 0 100 116" aria-hidden="true">
-    <path d="M50 16c3-7 10-11 17-10-1 7-6 12-14 13" fill="#3CC47C"/><path d="M50 17c-2-5-7-8-12-7 1 5 5 8 11 8" fill="#2BA968"/>
-    <path class="m-body" d="M50 14C50 14 13 54 13 77a37 37 0 0 0 74 0C87 54 50 14 50 14Z"/>
-    <path d="M30 64q3-13 13-24" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="5" stroke-linecap="round"/>
-    ${eyes}<ellipse cx="27" cy="84" rx="6" ry="3.6" fill="#FF8FA3" opacity=".8"/><ellipse cx="73" cy="84" rx="6" ry="3.6" fill="#FF8FA3" opacity=".8"/>${mouth}</svg>`;
-}
-
 /* ════════ 저장 상태 ════════ */
 const KEY = 'ilsin.v1';
-const HEART_MAX = 5, HEART_MS = 20 * 60 * 1000;
-const DEF = { v: 1, xp: 0, days: {}, streak: 0, last: null, best: 0, done: {}, hearts: HEART_MAX, heartAt: 0, wrong: {}, quiz: [], subject: 'hanmun', settings: { sound: true, vib: true, tts: true, inf: false, all: false, goal: 20, theme: 'system' } };
+const DEF = { v: 1, xp: 0, days: {}, streak: 0, last: null, best: 0, done: {}, wrong: {}, quiz: [], subject: 'hanmun', settings: { sound: true, vib: true, tts: true, all: false, goal: 20, theme: 'system' } };
 let S = load();
 function load() {
   try {
@@ -74,11 +54,6 @@ function load() {
   return JSON.parse(JSON.stringify(DEF));
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
-function syncHearts() {
-  if (S.hearts >= HEART_MAX) { S.hearts = HEART_MAX; return; }
-  const n = Math.floor((Date.now() - S.heartAt) / HEART_MS);
-  if (n > 0) { S.hearts = Math.min(HEART_MAX, S.hearts + n); S.heartAt += n * HEART_MS; save(); }
-}
 function streakNow() { const t = today(); return (S.last === t || S.last === addDays(t, -1)) ? S.streak : 0; }
 const todayXp = () => S.days[today()] || 0;
 
@@ -565,18 +540,15 @@ const PRAISE = ['정답이에요!', '훌륭해요!', '좋아요!', '완벽해요
 const lessonEl = () => $('#lesson');
 
 function startLesson(cfg) {
-  syncHearts();
   const quiz = cfg.mode === 'quiz';
-  const useHearts = !S.settings.inf && cfg.mode !== 'practice' && !quiz;
-  if (useHearts && S.hearts <= 0) { noHearts(false); return; }
   if (!cfg.ex || !cfg.ex.length) { toast('연습할 문제가 아직 없어요'); return; }
-  LS = Object.assign({ i: 0, solved: 0, right: 0, wrong: 0, combo: 0, t0: Date.now(), useHearts, missed: new Set(), log: [] }, cfg);
+  LS = Object.assign({ i: 0, solved: 0, right: 0, wrong: 0, combo: 0, t0: Date.now(), missed: new Set(), log: [] }, cfg);
   LS.q = cfg.ex.slice(); LS.total = cfg.ex.length;
   const el = lessonEl();
   el.hidden = false; document.body.classList.add('in-lesson'); el.classList.toggle('quizmode', quiz);
   el.innerHTML = `<div class="lhead"><button class="iconbtn" id="lquit" aria-label="그만하기">${icon('x', 26)}</button>
     <div class="pbar" role="progressbar" aria-label="진행도"><i></i><span class="combo"></span></div>
-    ${quiz ? `<div class="qcount"><b>1</b>/${LS.total}</div>` : `<div class="lhearts ${useHearts ? '' : 'inf'}">${icon('heart', 24)}<b>${useHearts ? S.hearts : '∞'}</b></div>`}</div>
+    ${quiz ? `<div class="qcount"><b>1</b>/${LS.total}</div>` : ''}</div>
     <div class="lbody"><div class="lin"></div></div><div class="lfoot"><div class="fb"></div><div class="fbtns"><button class="btn ghost" id="lskip">건너뛰기</button><button class="btn wide" id="lcheck" disabled>확인</button></div></div>
     <div class="tip" hidden></div>`;
   $('#lquit').onclick = () => confirmQuit();
@@ -590,11 +562,6 @@ function setProgress(anim) {
   if (anim && LS.combo >= 3 && [3, 5, 8, 10, 15, 20].includes(LS.combo)) {
     const c = $('.pbar .combo', lessonEl()); c.textContent = `${LS.combo}연속 정답!`; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show');
   }
-}
-function setHeartsUI(lost) {
-  const h = $('.lhearts', lessonEl()); if (!h || !LS.useHearts) return;
-  $('b', h).textContent = S.hearts;
-  if (lost) { h.classList.remove('lose'); void h.offsetWidth; h.classList.add('lose'); }
 }
 function footState(state, res) {
   const foot = $('.lfoot', lessonEl()), btn = $('#lcheck'), fb = $('.fb', foot);
@@ -739,7 +706,6 @@ function finishEx(ok) {
     // 'enter'를 먼저 빼야 흔들기가 끝난 뒤 들어오는 애니메이션이 다시 재생되지 않는다
     const lin = $('.lin', box); lin.classList.remove('enter'); lin.classList.add('shake'); setTimeout(() => lin.classList.remove('shake'), 400);
     if (e.key) { S.wrong[e.key] = (S.wrong[e.key] || 0) + 1; LS.missed.add(e.key); }
-    if (LS.useHearts) { if (S.hearts >= HEART_MAX) S.heartAt = Date.now(); S.hearts = Math.max(0, S.hearts - 1); setHeartsUI(true); }
     const again = Object.assign({}, e, { retry: true });
     if (again.opts) again.opts = shuffle(again.opts);
     if (again.tiles) again.tiles = shuffle(again.tiles);
@@ -750,7 +716,7 @@ function finishEx(ok) {
   footState(ok ? 'ok' : 'no', { exp: e.exp });
   if (e.say && e.type !== 'match') setTimeout(() => tts.say(e.say), ok ? 380 : 500);
 }
-// 모르는 문제 건너뛰기: 정답을 보여 주고, 하트는 그대로 두되 레슨 끝에 다시 내고 오답 노트에 넣는다
+// 모르는 문제 건너뛰기: 정답을 보여 주고, 레슨 끝에 다시 내고 오답 노트에 넣는다
 function skipEx() {
   if (!LS || !CUR || CUR.state.done || CUR.type === 'teach') return;
   const e = CUR, box = lessonEl(); e.state.done = true;
@@ -767,7 +733,6 @@ function skipEx() {
   if (e.say && e.type !== 'match') setTimeout(() => tts.say(e.say), 400);
 }
 function nextEx() {
-  if (LS.useHearts && S.hearts <= 0) { noHearts(true); return; }
   LS.i++;
   if (LS.i >= LS.q.length) finishLesson(); else renderEx();
 }
@@ -777,22 +742,9 @@ function closeLesson() {
   renderTop(); show(TAB);
 }
 function confirmQuit() {
-  modal(`${mascot('sad', 84)}<h3>정말 그만둘까요?</h3><p>지금 그만두면 이번 레슨에서 푼 내용이 저장되지 않아요.</p>
+  modal(`<h3>정말 그만둘까요?</h3><p>지금 그만두면 이번 레슨에서 푼 내용이 저장되지 않아요.</p>
     <button class="btn wide" data-act="stay">계속 공부하기</button><button class="btn wide ghost danger" data-act="quit">그만두기</button>`,
     { stay: closeModal, quit: closeLesson });
-}
-function noHearts(inLesson) {
-  syncHearts();
-  const left = Math.max(1, Math.ceil((HEART_MS - (Date.now() - S.heartAt)) / 60000));
-  const hasWrong = Object.keys(S.wrong).some(k => BYKEY[k]);
-  modal(`${mascot('sad', 84)}<h3>하트를 모두 썼어요</h3><p>${left}분 뒤에 하트가 1개 다시 차요.<br>복습을 끝내면 하트를 바로 1개 받아요.</p>
-    <button class="btn wide" data-act="practice">${hasWrong ? '오답 복습하고 하트 받기' : '복습하고 하트 받기'}</button>
-    <button class="btn wide ghost" data-act="leave">${inLesson ? '레슨 그만두기' : '닫기'}</button>
-    <p class="small">하트 없이 공부하고 싶으면 프로필 → 설정에서 <b>무제한 하트</b>를 켜세요.</p>`,
-    {
-      practice: () => { closeModal(); if (LS) closeLesson(); startPractice(hasWrong ? 'mistakes' : 'chars'); },
-      leave: () => { closeModal(); if (inLesson) closeLesson(); }
-    });
 }
 // XP를 더하고 연속 학습일을 갱신: 오늘 첫 학습이면 first, 이번에 목표를 넘겼으면 wasGoal
 function award(xp) {
@@ -878,12 +830,11 @@ function finishQuiz() {
   save();
   sfx.done(); buzz(40);
   CUR = null;
-  const mood = score >= 80 ? 'cheer' : score >= 50 ? 'happy' : 'sad';
   const msg = score === 100 ? '만점이에요!' : score >= 90 ? '훌륭해요!' : score >= 70 ? '잘했어요!' : score >= 50 ? '조금만 더 힘내요!' : '요약을 보고 다시 도전해요!';
   const wrongN = n - right;
   $('.lhead', lessonEl()).classList.add('dim');
   $('.lin', lessonEl()).innerHTML = `<div class="qres">
-    <div class="qtop">${mascot(mood, 84)}<div class="qscore" style="--p:${score}"><div class="qsin"><b>${score}</b><small>점</small></div>
+    <div class="qtop"><div class="qscore" style="--p:${score}"><div class="qsin"><b>${score}</b><small>점</small></div>
       ${score >= 90 ? '<div class="seal"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>' : ''}</div></div>
     <h2>${msg}</h2><p class="dsub">${esc(LS.title)} · ${n}문제 중 ${right}문제 정답 · +${xp} XP</p>
     ${wrongN ? `<button class="btn wide red" data-qretry>${icon('refresh', 20)} 틀린 ${wrongN}문제 다시 풀기</button>` : ''}
@@ -905,16 +856,14 @@ function finishLesson() {
   if (perfect) xp += 5;
   const { first, wasGoal } = award(xp);
   if (LS.lesson) { const d = S.done[LS.lesson.id] || { n: 0, best: 0 }; d.n++; d.best = Math.max(d.best, acc); S.done[LS.lesson.id] = d; }
-  let gotHeart = false;
-  if (LS.mode === 'practice' && S.hearts < HEART_MAX) { S.hearts++; gotHeart = true; if (S.hearts >= HEART_MAX) S.heartAt = Date.now(); }
   save();
   sfx.done(); buzz(40);
   const title = perfect ? '완벽해요!' : LS.mode === 'exam' ? '평가 완료!' : LS.mode === 'review' ? '단원 복습 완료!' : LS.mode === 'practice' ? '복습 완료!' : '레슨 완료!';
   const box = $('.lin', lessonEl());
   $('.lhead', lessonEl()).classList.add('dim');
   box.innerHTML = `<div class="done">
-    <div class="seal-wrap"><div class="seal"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>${mascot('cheer', 120)}</div>
-    <h2>${title}</h2><p class="dsub">${LS.title ? esc(LS.title) : ''}${gotHeart ? ' · 하트 +1' : ''}</p>
+    <div class="seal big"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>
+    <h2>${title}</h2><p class="dsub">${LS.title ? esc(LS.title) : ''}</p>
     <div class="dstats"><div class="ds gold"><small>획득 XP</small><b>${icon('bolt', 20)} ${xp}</b></div>
     <div class="ds jade"><small>정확도</small><b>${icon('target', 20)} ${acc}%</b></div>
     <div class="ds sky"><small>걸린 시간</small><b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</b></div></div>
@@ -936,7 +885,7 @@ function streakScreen(goal) {
     <div class="sflame">${icon('flame', 120)}<b>${S.streak}</b></div>
     <h2>${S.streak}일 연속 학습!</h2>
     <div class="week">${week.map(k => { const d = new Date(k.replace(/-/g, '/')); return `<div class="wday ${S.days[k] ? 'on' : ''} ${k === t ? 'today' : ''}"><small>${wd[d.getDay()]}</small><i>${S.days[k] ? icon('check', 16) : ''}</i></div>`; }).join('')}</div>
-    <p class="motto"><span class="hz">苟日新 日日新 又日新</span><br>날마다 새로워지고 있어요.${goal ? '<br><b>오늘의 목표도 달성했어요!</b>' : ''}</p></div>`;
+    <p class="motto"><b>하루 한 입씩</b>, 꾸준히 자라고 있어요.${goal ? '<br><b>오늘의 목표도 달성했어요!</b>' : ''}</p></div>`;
   sfx.done();
   $('#lcheck').onclick = () => { closeLesson(); afterLesson(); };
 }
@@ -989,16 +938,15 @@ function confetti() {
 }
 
 /* ════════ 상단 막대 · 과목 탭 ════════ */
-const curSub = () => SUBJECTS.find(s => s.id === S.subject) || SUBJECTS[0];
+// 예전에 고른 과목이 목록에서 빠졌으면 한문으로
+const curSub = () => SUBJECTS.find(s => s.id === S.subject) || SUBJECTS.find(s => s.id === 'hanmun') || SUBJECTS[0];
 const subMark = s => `<span class="smk${isHz(s.mark) ? ' hz' : ''}">${esc(s.mark)}</span>`;
 function renderTop() {
-  syncHearts();
   const st = streakNow(), cur = curSub();
   const top = $('#top');
-  top.innerHTML = `<div class="toprow"><div class="brand"><span class="seal-mini hz">日新</span></div>
+  top.innerHTML = `<div class="toprow"><div class="brand"><span class="brandname">하루한입</span></div>
     <button class="stat flame ${st ? '' : 'off'}" data-go="profile" aria-label="연속 학습 ${st}일">${icon('flame', 24)}<b>${st}</b></button>
-    <button class="stat xp" data-go="profile" aria-label="총 ${S.xp} XP">${icon('bolt', 24)}<b>${S.xp}</b></button>
-    <button class="stat heart" data-act="hearts" aria-label="하트">${icon('heart', 24)}<b>${S.settings.inf ? '∞' : S.hearts}</b></button></div>
+    <button class="stat xp" data-go="profile" aria-label="총 ${S.xp} XP">${icon('bolt', 24)}<b>${S.xp}</b></button></div>
     ${TAB === 'profile' ? '' : `<div class="subjects" role="tablist" aria-label="과목">${SUBJECTS.map(s => `<button role="tab" aria-selected="${s === cur}"
       class="subj c-${s.color}${s === cur ? ' on' : ''}${s.ready ? '' : ' soon'}" data-subj="${s.id}">${subMark(s)}${esc(s.name)}</button>`).join('')}</div>`}`;
   const on = $('.subj.on', top); if (on) on.parentElement.scrollLeft = on.offsetLeft - 60;
@@ -1014,7 +962,7 @@ function renderSoon(sub, tab) {
     <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 추가되면 여기에서 열려요.<br>
       교과서나 학습지, 공책 사진으로 한문처럼 레슨 · 퀴즈 · 요약 · 복습을 만들 수 있어요.</p>
     ${tab === 'learn' ? `<div class="soonpath">${[0, 1, 2, 3, 4].map(i => `<div class="nrow" style="--x:${Math.round(Math.sin(i * 0.95) * 64)}px"><span class="node locked">${icon('lock', 30)}</span></div>`).join('')}</div>`
-      : `<div class="soonmascot">${mascot('happy', 84)}</div>`}
+      : ''}
     <button class="btn wide ghost" data-subj="hanmun">한문 공부하러 가기</button>
   </div>`;
 }
@@ -1040,12 +988,11 @@ function renderLearn() {
       html += `<div class="nrow" style="--x:${x}px">
         <button class="node ${st}${L.review || L.exam ? ' big' : ''}" data-l="${idx}" aria-label="${esc(L.t)} ${st === 'done' ? '완료' : st === 'locked' ? '잠김' : ''}">
         ${st === 'current' ? '<span class="startbub">시작!</span><span class="ring"></span>' : ''}${icon(ic, L.review || L.exam ? 36 : 32)}</button></div>`;
-      if (li === 2) html += `<div class="pathmascot" style="--x:${-Math.sign(Math.sin(li * 0.95 + (ui % 2 ? Math.PI : 0)) || 1) * 120}px">${mascot(ui % 2 ? 'cheer' : 'happy', 70)}</div>`;
     });
     html += `</div></section>`;
   });
   const all = LESSONS.every(L => S.done[L.id]);
-  html += `<p class="pathend">${mascot(all ? 'cheer' : 'happy', 56)}<span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '한 걸음씩, 날마다 새롭게!'}</span></p>`;
+  html += `<p class="pathend"><span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '하루 한 입씩, 꾸준히!'}</span></p>`;
   return html;
 }
 function nodePop(btn) {
@@ -1073,7 +1020,7 @@ function renderReview() {
   const { it } = learnedItems();
   const charN = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]).length;
   const card = (k, ic, c, t, d, dis) => `<button class="rcard c-${c}" data-practice="${k}" ${dis ? 'disabled' : ''}><span class="ricon">${icon(ic, 28)}</span><span class="rtxt"><b>${t}</b><small>${d}</small></span></button>`;
-  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">복습을 끝내면 하트를 1개 받아요.</p>
+  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀렸던 문제와 배운 내용을 다시 풀면서 실력을 다져요.</p>
     ${card('mistakes', 'refresh', 'coral', '오답 노트', wrongN ? `틀렸던 문제 ${wrongN}개 다시 풀기` : '아직 틀린 문제가 없어요', !wrongN)}
     ${card('chars', 'star', 'jade', '한자 훈음 연습', `배운 한자 ${charN}자에서 골라 풀기`)}
     ${card('words', 'book', 'violet', '어휘 연습', `독음 · 뜻 · 빈칸 채우기`)}
@@ -1091,7 +1038,7 @@ function renderQuiz() {
   const hist = (S.quiz || []).slice(0, 8);
   const best = (S.quiz || []).length ? Math.max(...S.quiz.map(h => h.s)) : null;
   return `<div class="page quiz"><h1 class="ptitle">퀴즈</h1>
-    <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점해요. 하트는 줄지 않고, 틀린 문제는 오답 노트에 모여요.</p>
+    <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점해요. 틀린 문제는 오답 노트에 모여요.</p>
     <h2 class="sect">범위</h2>
     <div class="chips wrap">${chips.map(([id, t]) => `<button class="chip ${QUIZ_U === id ? 'on' : ''}" data-qu="${id}">${t}</button>`).join('')}</div>
     <p class="qrange">${sel ? `${esc(sel.no)} · ${esc(sel.title)}` : '1~5단원 전체에서 골고루'}</p>
@@ -1101,7 +1048,7 @@ function renderQuiz() {
     <h2 class="sect">최근 기록${best != null ? `<span class="qbest">최고 ${best}점</span>` : ''}</h2>
     ${hist.length ? `<div class="qhist">${hist.map(h => `<div class="qh"><span class="qhs ${h.s >= 90 ? 'hi' : h.s >= 70 ? 'mid' : 'lo'}">${h.s}</span>
       <span class="qht"><b>${esc(h.r)}</b><small>${h.d.slice(5).replace('-', '월 ')}일 · ${h.n}문제</small></span></div>`).join('')}</div>`
-      : `<p class="empty">${mascot('happy', 56)}<br>아직 푼 퀴즈가 없어요. 첫 퀴즈에 도전해 보세요!</p>`}
+      : `<p class="empty">아직 푼 퀴즈가 없어요. 첫 퀴즈에 도전해 보세요!</p>`}
   </div>`;
 }
 
@@ -1160,7 +1107,7 @@ function noteList() {
     });
     out += `</section>`;
   });
-  return out || `<p class="empty">${mascot('sad', 64)}<br>찾는 내용이 없어요.</p>`;
+  return out || `<p class="empty">찾는 내용이 없어요.</p>`;
 }
 
 /* ════════ 프로필 화면 ════════ */
@@ -1177,7 +1124,7 @@ function renderProfile() {
     return `<button class="sprog c-${s.color}" data-subj-go="${s.id}">${subMark(s)}<b>${esc(s.name)}</b>
       ${s.ready && ls.length ? `<span class="gbar"><i style="width:${Math.round(dn / ls.length * 100)}%"></i></span><small>${dn}/${ls.length}</small>` : '<span class="soonbadge small">준비 중</span>'}</button>`;
   }).join('');
-  return `<div class="page profile"><div class="phead">${mascot('happy', 80)}<div><h1>나의 학습</h1><p>2학년 2학기 · 일일신</p></div></div>
+  return `<div class="page profile"><div class="phead"><div><h1>나의 학습</h1><p>2학년 2학기 · 하루한입</p></div></div>
     <div class="pstats">
       <div class="ps flame">${icon('flame', 26)}<b>${streakNow()}</b><small>연속 학습일</small></div>
       <div class="ps xp">${icon('bolt', 26)}<b>${S.xp}</b><small>총 XP</small></div>
@@ -1194,7 +1141,7 @@ function renderProfile() {
     <h2 class="sect">설정</h2>
     <div class="sets">
       ${tg('sound', '효과음')}${tg('vib', '진동')}${tg('tts', '읽어 주기', '한자와 독음을 소리 내어 읽어요')}
-      ${tg('inf', '무제한 하트', '틀려도 하트가 줄지 않아요')}${tg('all', '모든 레슨 열기', '시험 전에 원하는 레슨부터 공부해요')}
+      ${tg('all', '모든 레슨 열기', '시험 전에 원하는 레슨부터 공부해요')}
       <div class="set"><span><b>화면 테마</b></span><div class="seg">${[['system', '자동'], ['light', '밝게'], ['dark', '어둡게']].map(([v, l]) => `<button data-theme-set="${v}" class="${S.settings.theme === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     </div>
     <h2 class="sect">진행 상황 백업</h2>
@@ -1202,8 +1149,8 @@ function renderProfile() {
     <div class="row2"><button class="btn ghost wide" data-act="export">백업 코드 복사</button><button class="btn ghost wide" data-act="import">백업 불러오기</button></div>
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
-    <a class="btn wide" href="ilsin.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">일일신(日日新) v1.4 · 苟日新 日日新 又日新</p></div>`;
+    <a class="btn wide" href="haruhanip.apk" download>안드로이드 앱(APK) 받기</a>`}
+    <p class="about">하루한입 v1.5 · 매일 한 입씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1283,14 +1230,9 @@ document.addEventListener('click', ev => {
   const act = t.closest('[data-act]');
   if (act) {
     const a = act.dataset.act;
-    if (a === 'hearts') {
-      syncHearts();
-      const left = Math.max(1, Math.ceil((HEART_MS - (Date.now() - S.heartAt)) / 60000));
-      toast(S.settings.inf ? '무제한 하트를 쓰고 있어요' : S.hearts >= HEART_MAX ? '하트가 가득 찼어요' : `하트 ${S.hearts}개 · ${left}분 뒤에 1개 더 차요`);
-    }
     if (a === 'export') exportCode();
     if (a === 'import') importCode();
-    if (a === 'reset') modal(`${mascot('sad', 72)}<h3>처음부터 다시 할까요?</h3><p>XP, 연속 학습, 끝낸 레슨, 오답 노트가 모두 지워져요.</p>
+    if (a === 'reset') modal(`<h3>처음부터 다시 할까요?</h3><p>XP, 연속 학습, 끝낸 레슨, 오답 노트가 모두 지워져요.</p>
       <button class="btn wide ghost" data-act="close">취소</button><button class="btn wide red" data-act="wipe">모두 지우기</button>`,
       { close: closeModal, wipe: () => { const keep = S.settings; S = JSON.parse(JSON.stringify(DEF)); S.settings = keep; save(); closeModal(); renderTop(); show('learn'); toast('처음부터 시작해요'); } });
   }
@@ -1324,7 +1266,6 @@ function syncNativeTheme() {
     NATIVE.setDark(dark);
   } catch (e) { }
 }
-setInterval(() => { if (!LS && !S.settings.inf && S.hearts < HEART_MAX) { const h = S.hearts; syncHearts(); if (S.hearts !== h) renderTop(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && !LS) { renderTop(); if (TAB === 'learn') { const y = scrollY; show('learn'); window.scrollTo(0, y); } } });
 
 /* ════════ 시작 ════════ */

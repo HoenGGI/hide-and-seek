@@ -1,7 +1,7 @@
 {
-  "name": "일일신 日日新 — 한문 학습",
-  "short_name": "일일신",
-  "description": "2학년 2학기 한문을 매일 조금씩 익히는 앱",
+  "name": "하루한입 — 매일 한 입씩 공부",
+  "short_name": "하루한입",
+  "description": "국어 · 역사 · 한문 · 과학을 매일 조금씩 공부하는 앱",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
