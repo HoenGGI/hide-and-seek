@@ -483,14 +483,35 @@ function sentGens(s, mode) {
 // 같은 문제인지 가리는 서명: 문제 종류 + 질문 + 문제 상자 + 정답 (보기 순서는 무시)
 const exSig = e => [e.type, e.title, e.prompt, e.answerText].map(x => String(x || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()).join('|');
 // 앞에서 나온 문제와 서명이 같은 것은 빼고, 최대 n개까지
-function takeNew(list, seen, n = Infinity) {
+// 같은 내용을 묻는 문제인지 가리는 열쇠: 정답(보기 기호·O/X 같은 흔한 답은 빼고)과 긴 자료
+const exNorm = x => String(x || '').replace(/<[^>]+>/g, '').replace(/[\s「」『』〈〉《》'"“”‘’.,·]/g, '');
+function exKeys(e) {
+  const ks = [], a = exNorm(e.answerText), pr = exNorm(e.prompt);
+  if (a && !/^([ㄱ-ㅎ],?)+$|^[①-⑩]+$|^(O|X|○|×|있다|없다|옳다|옳지않다)$/.test(a)) ks.push('A:' + a);
+  if (pr.length > 25) ks.push('P:' + pr);
+  return ks;
+}
+// 앞에서 나온 문제와 서명이 같은 것은 빼고, 최대 n개까지 (strict이면 정답·자료가 같은 문제도 뺀다)
+function takeNew(list, seen, n = Infinity, strict = false) {
   const out = [];
   for (const e of list) {
     if (out.length >= n) break;
     if (!e) continue;
-    if (e.type !== 'teach') { const k = exSig(e); if (seen.has(k)) continue; seen.add(k); }
+    if (e.type !== 'teach') {
+      const k = exSig(e); if (seen.has(k)) continue;
+      const ks = strict ? exKeys(e) : [];
+      if (ks.some(x => seen.has(x))) continue;
+      seen.add(k); ks.forEach(x => seen.add(x));
+      if (!strict) exKeys(e).forEach(x => seen.add(x));
+    }
     out.push(e);
   }
+  return out;
+}
+// 겹치지 않게 최대한 고르고, 모자라면 완전히 같은 문제만 빼고 채우기
+function takeVaried(make, seen, n) {
+  const out = takeNew(make(n + 40), seen, n, true);
+  if (out.length < n) out.push(...takeNew(make(n + 40), seen, n - out.length));
   return out;
 }
 function roundRobin(groups, n) {
@@ -547,8 +568,8 @@ function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   shuffle(it.cloze).slice(0, clozeN).forEach(z => fixed.push(X.cloze(z)));
   shuffle(it.quiz).slice(0, quizN).forEach(q => fixed.push(X.quiz(q)));
   const groups = shuffle([...it.words.map(w => wordGens(w, mode)), ...it.sents.map(s => sentGens(s, mode)), ...shuffle(chars).slice(0, 6).map(charGens), ...it.terms.map(termGens)]);
-  const seen = new Set(), fx = takeNew(fixed, seen), want = Math.max(4, n - fx.length);
-  return shuffle([...fx, ...takeNew(roundRobin(groups, want + 10), seen, want)]).slice(0, n);
+  const seen = new Set(), fx = takeNew(fixed, seen, Infinity, true), want = Math.max(4, n - fx.length);
+  return shuffle([...fx, ...takeVaried(k => roundRobin(groups, k), seen, want)]).slice(0, n);
 }
 function buildLesson(L) {
   if (L.exam) {
@@ -600,7 +621,8 @@ const PRACTICE = {
   sents() {
     const { it } = learnedItems();
     if (!it.sents.length) return null;
-    return roundRobin(shuffle(it.sents).map(s => sentGens(s, 'review')), 12);
+    const gs = shuffle(it.sents).map(s => sentGens(s, 'review'));
+    return takeVaried(k => roundRobin(gs, k), new Set(), 12);
   },
   mixed() { const { it } = learnedItems(); return buildMixed(it, 12, 'review', { quizN: 9, clozeN: 0 }); },
 };
@@ -829,16 +851,18 @@ function award(xp) {
 
 /* ════════ 퀴즈 (시험처럼 풀고 마지막에 채점) ════════ */
 function buildQuiz(uids, n) {
-  const bank = shuffle(uids.flatMap(u => SU().exam[u] || []));
-  const out = bank.slice(0, Math.min(bank.length, Math.round(n * 0.65))).map(X.exam);
+  const bank = shuffle(uids.flatMap(u => SU().exam[u] || [])).map(X.exam);
   const it = unitItems(uids);
   const gens = shuffle([
     ...it.words.map(w => shuffle([() => X.wordEum(w), () => X.typeEum(w), () => X.wordMean(w), () => X.meanWord(w), () => X.wordCloze(w)])),
     ...it.sents.map(s => shuffle([() => X.sentChoice(s), () => X.ctxChar(s), () => X.sentEum(s), () => X.sentBuild(s), ...(s.ord ? [() => X.order(s)] : [])])),
     ...it.terms.map(termGens), ...shuffle(it.quiz).map(q => [() => X.quiz(q)]),
   ]);
-  const seen = new Set(), fromBank = takeNew(out, seen);
-  return shuffle([...fromBank, ...takeNew(roundRobin(gens, n - fromBank.length + 10), seen, n - fromBank.length)]).slice(0, n);
+  const seen = new Set(), fromBank = takeNew(bank, seen, Math.round(n * 0.65), true);
+  const rest = takeVaried(k => roundRobin(gens, k), seen, n - fromBank.length);
+  // 그래도 모자라면 남은 문제 은행에서
+  if (fromBank.length + rest.length < n) rest.push(...takeNew(bank, seen, n - fromBank.length - rest.length));
+  return shuffle([...fromBank, ...rest]).slice(0, n);
 }
 function startQuiz(u, n) {
   const uids = u === 'all' ? SU().units.filter(x => SU().exam[x.id]).map(x => x.id) : [u];
@@ -1334,7 +1358,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.22 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.23 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
