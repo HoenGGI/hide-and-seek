@@ -206,6 +206,23 @@ function expOf(item) {
 }
 
 const pairText = pairs => pairs.map(p => `${p[0]} – ${p[1]}`).join(' · ');
+// 쓰기 문제 답 비교: 띄어쓰기·문장 부호·낫표·대소문자 무시
+const ansNorm = v => norm(String(v).replace(/[「」『』〈〉《》]/g, '')).toLowerCase();
+// 같은 것을 가리키는 다른 이름도 정답으로
+const ALT_ANS = {
+  '윌슨의 14개조 평화 원칙': ['14개조 평화 원칙', '윌슨의 14개조', '14개조 평화원칙'],
+  '테니스코트의 서약': ['테니스코트 서약'],
+  '인권 선언': ['인간과 시민의 권리 선언', '프랑스 인권 선언'],
+  '국제 연합': ['UN', '국제 연합(UN)'],
+  '신경제 정책': ['NEP', '신경제 정책(NEP)'],
+};
+// "신경제 정책(NEP)" → 신경제 정책(NEP) · 신경제 정책 · NEP 모두 정답
+function altAnswers(a) {
+  const t = String(a), out = new Set([t, ...(ALT_ANS[t] || [])]);
+  const m = t.match(/^(.+?)\s*\(([^()]+)\)\s*$/);
+  if (m) { out.add(m[1]); out.add(m[2]); (ALT_ANS[m[1]] || []).forEach(x => out.add(x)); }
+  return [...new Set([...out].map(ansNorm))];
+}
 const X = {
   pickHunum(c) {
     const ds = distract(3, prefer(POOL.chars, c.u), x => x.ch !== c.ch && x.hun !== c.hun, x => x.hun);
@@ -287,7 +304,7 @@ const X = {
     return {
       type: 'type', key: item.k, item, title: '독음을 한글로 써 보세요',
       prompt: item.kind === 'word' ? `<div class="bighz hz word">${item.h}</div>` : `<div class="sentence">${hzHtml(item.h)}</div>`,
-      ans: [norm(r), norm(readingToe(item))], answerText: readingToe(item), say: readingToe(item), exp: expOf(item)
+      ans: [ansNorm(r), ansNorm(readingToe(item))], answerText: readingToe(item), say: readingToe(item), exp: expOf(item)
     };
   },
   listenWord(w) {
@@ -376,7 +393,7 @@ const X = {
     }
     if (q.t === 'short') return {
       type: 'type', key: q.k, item: q, title: q.q, prompt: box,
-      ans: q.a.map(norm), answerText: q.a[0], say: onlyHz ? q.a[0] : '', exp: q.exp || ''
+      ans: [...new Set(q.a.flatMap(altAnswers))], answerText: q.a[0], say: onlyHz ? q.a[0] : '', exp: q.exp || ''
     };
     return {
       type: 'choice', key: q.k, item: q, title: q.q, layout: q.hz ? hzLayout([q.a, ...q.w]) : (q.w.length < 3 ? 'grid2' : 'list'),
@@ -403,7 +420,7 @@ const X = {
     };
   },
   termType(x) {
-    return { type: 'type', key: x.k, item: x, title: '설명에 알맞은 용어를 쓰세요', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`, ans: [norm(x.t)], answerText: x.t, say: '', exp: '' };
+    return { type: 'type', key: x.k, item: x, title: '설명에 알맞은 용어를 쓰세요', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`, ans: altAnswers(x.t), answerText: x.t, say: '', exp: '' };
   },
   cloze(z) {
     const ws = [z.a, ...z.w].map(h => WORDS[h]).filter(Boolean);
@@ -795,7 +812,7 @@ function judge() {
   const e = CUR, st = e.state;
   if (e.type === 'choice') return e.opts[st.sel].v === e.ans;
   if (e.type === 'tiles') { const got = st.picked.map(i => e.tiles[i]); return got.length === e.ans.length && got.every((x, i) => x === e.ans[i]); }
-  if (e.type === 'type') return e.ans.includes(norm($('input.typein', lessonEl()).value));
+  if (e.type === 'type') return e.ans.includes(ansNorm($('input.typein', lessonEl()).value));
   return true;
 }
 function onMain() {
@@ -1381,7 +1398,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.26 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.27 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
