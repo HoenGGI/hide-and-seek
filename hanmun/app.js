@@ -571,7 +571,6 @@ const PRACTICE = {
   mistakes() {
     const keys = Object.entries(S.wrong).filter(([k]) => BYKEY[k] && itemSub(BYKEY[k]) === curSub().id).sort((a, b) => b[1] - a[1]).map(e => e[0]).slice(0, 12);
     const ex = keys.map(exFromKey).filter(Boolean);
-    if (ex.length < 6) keys.slice(0, 6 - ex.length).forEach(k => { const e = exFromKey(k); if (e) ex.push(e); });
     return shuffle(ex);
   },
   chars() {
@@ -757,7 +756,7 @@ function finishEx(ok) {
   if (e.type === 'type') { const inp = $('input.typein', box); inp.classList.add(ok ? 'right' : 'wrong'); inp.readOnly = true; inp.blur(); }
   if (ok) {
     LS.right++; LS.combo++; LS.solved++; sfx.right(); buzz(18);
-    if (LS.mode === 'practice' && S.wrong[e.key]) { if (--S.wrong[e.key] <= 0) delete S.wrong[e.key]; }
+    if (LS.mode === 'practice' && e.key && S.wrong[e.key] && !e.retry && !LS.missed.has(e.key)) { delete S.wrong[e.key]; LS.cleared = (LS.cleared || 0) + 1; }
   } else {
     LS.wrong++; LS.combo = 0; sfx.wrong(); buzz(90);
     // 'enter'를 먼저 빼야 흔들기가 끝난 뒤 들어오는 애니메이션이 다시 재생되지 않는다
@@ -925,6 +924,7 @@ function finishLesson() {
   box.innerHTML = `<div class="done">
     <div class="seal big"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>
     <h2>${title}</h2><p class="dsub">${LS.title ? esc(LS.title) : ''}</p>
+    ${LS.kind === 'mistakes' ? `<p class="dsub">오답 노트에서 ${LS.cleared || 0}문제를 지웠어요 · 남은 오답 ${Object.keys(S.wrong).filter(k => BYKEY[k] && itemSub(BYKEY[k]) === curSub().id).length}문제${LS.missed.size ? ' (이번에 틀린 문제는 남겨 뒀어요)' : ''}</p>` : ''}
     <div class="dstats"><div class="ds gold"><small>획득 XP</small><b>${icon('bolt', 20)} ${xp}</b></div>
     <div class="ds jade"><small>정확도</small><b>${icon('target', 20)} ${acc}%</b></div>
     <div class="ds sky"><small>걸린 시간</small><b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</b></div></div>
@@ -955,7 +955,7 @@ function startPractice(kind) {
   const ex = PRACTICE[kind]();
   if (!ex || !ex.length) { toast(kind === 'mistakes' ? '오답 노트가 비어 있어요. 잘하고 있어요!' : '먼저 레슨을 하나 끝내 보세요'); return; }
   const titles = { mistakes: '오답 노트 복습', chars: '한자 훈음 연습', words: '어휘 연습', sents: '문장 연습' };
-  startLesson({ mode: 'practice', title: titles[kind], ex });
+  startLesson({ mode: 'practice', kind, title: titles[kind], ex });
 }
 function startNode(L) {
   const b = buildLesson(L);
@@ -1318,7 +1318,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.18 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.19 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
