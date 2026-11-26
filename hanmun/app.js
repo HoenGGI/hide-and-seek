@@ -480,6 +480,19 @@ function sentGens(s, mode) {
   if (s.ord) out.unshift(() => X.order(s));      // 풀이 순서가 있는 문장은 꼭 한 번 연습
   return out;
 }
+// 같은 문제인지 가리는 서명: 문제 종류 + 질문 + 문제 상자 + 정답 (보기 순서는 무시)
+const exSig = e => [e.type, e.title, e.prompt, e.answerText].map(x => String(x || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()).join('|');
+// 앞에서 나온 문제와 서명이 같은 것은 빼고, 최대 n개까지
+function takeNew(list, seen, n = Infinity) {
+  const out = [];
+  for (const e of list) {
+    if (out.length >= n) break;
+    if (!e) continue;
+    if (e.type !== 'teach') { const k = exSig(e); if (seen.has(k)) continue; seen.add(k); }
+    out.push(e);
+  }
+  return out;
+}
 function roundRobin(groups, n) {
   const out = []; groups = groups.filter(g => g.length).map(g => [...g]);
   while (out.length < n && groups.some(g => g.length)) {
@@ -518,8 +531,10 @@ function buildLearn(it) {
     groups.push((s.focus || []).map(i => () => X.ctxChar(s, i)));
     groups.push(shuffle(charsOf(s)).slice(0, 3).map(c => () => X.pickHanja(c)));
   });
-  mixed.push(...roundRobin(groups, Math.max(3, 13 - graded)));
-  return [...head, ...shuffle(mixed)].filter(Boolean);
+  const target = Math.max(3, 13 - graded), seen = new Set();
+  const headU = takeNew(head, seen), mixedU = takeNew(mixed, seen);
+  mixedU.push(...takeNew(roundRobin(groups, target + 10), seen, target));
+  return [...headU, ...shuffle(mixedU)];
 }
 function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   const fixed = [];
@@ -532,7 +547,8 @@ function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   shuffle(it.cloze).slice(0, clozeN).forEach(z => fixed.push(X.cloze(z)));
   shuffle(it.quiz).slice(0, quizN).forEach(q => fixed.push(X.quiz(q)));
   const groups = shuffle([...it.words.map(w => wordGens(w, mode)), ...it.sents.map(s => sentGens(s, mode)), ...shuffle(chars).slice(0, 6).map(charGens), ...it.terms.map(termGens)]);
-  return shuffle([...fixed, ...roundRobin(groups, Math.max(4, n - fixed.length))]).filter(Boolean).slice(0, n);
+  const seen = new Set(), fx = takeNew(fixed, seen), want = Math.max(4, n - fx.length);
+  return shuffle([...fx, ...takeNew(roundRobin(groups, want + 10), seen, want)]).slice(0, n);
 }
 function buildLesson(L) {
   if (L.exam) {
@@ -821,8 +837,8 @@ function buildQuiz(uids, n) {
     ...it.sents.map(s => shuffle([() => X.sentChoice(s), () => X.ctxChar(s), () => X.sentEum(s), () => X.sentBuild(s), ...(s.ord ? [() => X.order(s)] : [])])),
     ...it.terms.map(termGens), ...shuffle(it.quiz).map(q => [() => X.quiz(q)]),
   ]);
-  out.push(...roundRobin(gens, n - out.length));
-  return shuffle(out).slice(0, n);
+  const seen = new Set(), fromBank = takeNew(out, seen);
+  return shuffle([...fromBank, ...takeNew(roundRobin(gens, n - fromBank.length + 10), seen, n - fromBank.length)]).slice(0, n);
 }
 function startQuiz(u, n) {
   const uids = u === 'all' ? SU().units.filter(x => SU().exam[x.id]).map(x => x.id) : [u];
@@ -1318,7 +1334,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.20 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.21 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
