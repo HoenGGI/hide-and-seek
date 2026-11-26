@@ -1318,7 +1318,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.17 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.18 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -1452,7 +1452,7 @@ window.__ilsin = {
     Object.values(WORDS).forEach(w => {
       if (hzOf(w.h).length !== w.c.length) errs.push('훈음 개수: ' + w.h);
       const derived = w.c.map(eumOf).join('');
-      if (derived !== w.r && !['旅行', '流行', '不動', '不足', '不正', '不在'].includes(w.h)) errs.push(`독음 불일치: ${w.h} ${w.r} vs ${derived}`);
+      if (derived !== w.r && !['旅行', '流行', '不動'].includes(w.h)) errs.push(`독음 불일치: ${w.h} ${w.r} vs ${derived}`);
       if (!w.u) errs.push('레슨에 없음: ' + w.h);
     });
     Object.values(SENTS).forEach(s => {
