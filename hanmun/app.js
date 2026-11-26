@@ -491,27 +491,49 @@ function exKeys(e) {
   if (pr.length > 25) ks.push('P:' + pr);
   return ks;
 }
-// 앞에서 나온 문제와 서명이 같은 것은 빼고, 최대 n개까지 (strict이면 정답·자료가 같은 문제도 뺀다)
-function takeNew(list, seen, n = Infinity, strict = false) {
+// 앞에서 나온 문제와 서명이 같은 것은 빼고, 최대 n개까지
+// limit: 정답·자료가 같은 문제를 몇 번까지 허용할지 (1이면 한 번만, 2면 두 번까지, 0이면 제한 없음)
+function takeNew(list, seen, n = Infinity, limit = 0) {
   const out = [];
   for (const e of list) {
     if (out.length >= n) break;
     if (!e) continue;
     if (e.type !== 'teach') {
       const k = exSig(e); if (seen.has(k)) continue;
-      const ks = strict ? exKeys(e) : [];
-      if (ks.some(x => seen.has(x))) continue;
-      seen.add(k); ks.forEach(x => seen.add(x));
-      if (!strict) exKeys(e).forEach(x => seen.add(x));
+      const ks = exKeys(e);
+      if (limit === 1 && ks.some(x => seen.has(x))) continue;
+      if (limit === 2 && ks.some(x => seen.has(x + '#2'))) continue;
+      seen.add(k); ks.forEach(x => seen.add(seen.has(x) ? x + '#2' : x));
     }
     out.push(e);
   }
   return out;
 }
+// 정답·자료가 같은 문제가 바로 이어지지 않게 순서 고르기
+function spread(list) {
+  const out = [], rest = list.slice();
+  const clash = (a, b) => a && b && a.type !== 'teach' && b.type !== 'teach' && exKeys(a).some(k => exKeys(b).includes(k));
+  while (rest.length) {
+    const prev = out[out.length - 1];
+    let i = rest.findIndex(e => !clash(prev, e));
+    if (i < 0) i = 0;
+    out.push(rest.splice(i, 1)[0]);
+  }
+  // 끝에 몰려 어쩔 수 없이 붙은 것은 앞쪽 빈자리로 옮기기 (맨 앞 문제는 그대로)
+  for (let i = 1; i < out.length; i++) {
+    if (!clash(out[i - 1], out[i])) continue;
+    const [e] = out.splice(i, 1);
+    let j = 1;
+    for (; j <= out.length; j++) if (!clash(out[j - 1], e) && !clash(e, out[j])) break;
+    out.splice(j <= out.length ? j : i, 0, e);
+  }
+  return out;
+}
 // 겹치지 않게 최대한 고르고, 모자라면 완전히 같은 문제만 빼고 채우기
-function takeVaried(make, seen, n) {
-  const out = takeNew(make(n + 40), seen, n, true);
-  if (out.length < n) out.push(...takeNew(make(n + 40), seen, n - out.length));
+function takeVaried(make, seen, n, fill = true) {
+  const out = takeNew(make(n + 40), seen, n, 1);
+  if (out.length < n) out.push(...takeNew(make(n + 40), seen, n - out.length, 2));
+  if (fill && out.length < n) out.push(...takeNew(make(n + 40), seen, n - out.length));
   return out;
 }
 function roundRobin(groups, n) {
@@ -554,8 +576,9 @@ function buildLearn(it) {
   });
   const target = Math.max(3, 13 - graded), seen = new Set();
   const headU = takeNew(head, seen), mixedU = takeNew(mixed, seen);
-  mixedU.push(...takeNew(roundRobin(groups, target + 10), seen, target));
-  return [...headU, ...shuffle(mixedU)];
+  mixedU.push(...takeVaried(k => roundRobin(groups, k), seen, target, false));
+  const firstQ = headU.filter(e => e.type !== 'teach').pop();
+  return [...headU, ...spread([firstQ, ...shuffle(mixedU)].filter(Boolean)).slice(firstQ ? 1 : 0)];
 }
 function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   const fixed = [];
@@ -568,8 +591,8 @@ function buildMixed(it, n, mode, { quizN = 3, clozeN = 2 } = {}) {
   shuffle(it.cloze).slice(0, clozeN).forEach(z => fixed.push(X.cloze(z)));
   shuffle(it.quiz).slice(0, quizN).forEach(q => fixed.push(X.quiz(q)));
   const groups = shuffle([...it.words.map(w => wordGens(w, mode)), ...it.sents.map(s => sentGens(s, mode)), ...shuffle(chars).slice(0, 6).map(charGens), ...it.terms.map(termGens)]);
-  const seen = new Set(), fx = takeNew(fixed, seen, Infinity, true), want = Math.max(4, n - fx.length);
-  return shuffle([...fx, ...takeVaried(k => roundRobin(groups, k), seen, want)]).slice(0, n);
+  const seen = new Set(), fx = takeNew(fixed, seen, Infinity, 1), want = Math.max(4, n - fx.length);
+  return spread(shuffle([...fx, ...takeVaried(k => roundRobin(groups, k), seen, want)]).slice(0, n));
 }
 function buildLesson(L) {
   if (L.exam) {
@@ -858,11 +881,11 @@ function buildQuiz(uids, n) {
     ...it.sents.map(s => shuffle([() => X.sentChoice(s), () => X.ctxChar(s), () => X.sentEum(s), () => X.sentBuild(s), ...(s.ord ? [() => X.order(s)] : [])])),
     ...it.terms.map(termGens), ...shuffle(it.quiz).map(q => [() => X.quiz(q)]),
   ]);
-  const seen = new Set(), fromBank = takeNew(bank, seen, Math.round(n * 0.65), true);
+  const seen = new Set(), fromBank = takeNew(bank, seen, Math.round(n * 0.65), 1);
   const rest = takeVaried(k => roundRobin(gens, k), seen, n - fromBank.length);
   // 그래도 모자라면 남은 문제 은행에서
   if (fromBank.length + rest.length < n) rest.push(...takeNew(bank, seen, n - fromBank.length - rest.length));
-  return shuffle([...fromBank, ...rest]).slice(0, n);
+  return spread(shuffle([...fromBank, ...rest]).slice(0, n));
 }
 function startQuiz(u, n) {
   const uids = u === 'all' ? SU().units.filter(x => SU().exam[x.id]).map(x => x.id) : [u];
@@ -1358,7 +1381,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.25 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.26 · 매일 조금씩, 꾸준히</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
