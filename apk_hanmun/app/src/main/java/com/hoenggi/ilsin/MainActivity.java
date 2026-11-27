@@ -48,6 +48,9 @@ public class MainActivity extends Activity {
     private TextToSpeech tts;
     private volatile boolean ttsReady;
     private boolean dark;
+    // 초대 링크로 열렸을 때 웹 화면에 넘길 방 번호 (화면이 다 뜬 뒤에)
+    private String pendingPin;
+    private boolean pageReady;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -97,7 +100,14 @@ public class MainActivity extends Activity {
                     return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", null, null);
                 }
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                pageReady = true;
+                deliverPin();
+            }
         });
+        pendingPin = pinFrom(getIntent());
         web.loadUrl("https://" + HOST + "/index.html");
 
         tts = new TextToSpeech(this, status -> {
@@ -109,6 +119,28 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
         }
+    }
+
+    // otilingo://join/123456 또는 ...?join=123456
+    private static String pinFrom(Intent it) {
+        if (it == null || it.getData() == null) return null;
+        Uri u = it.getData();
+        String p = u.getQueryParameter("join");
+        if (p == null && u.getPath() != null) p = u.getPath().replace("/", "");
+        return p != null && p.matches("[1-9][0-9]{5}") ? p : null;
+    }
+
+    private void deliverPin() {
+        if (!pageReady || pendingPin == null) return;
+        String p = pendingPin; pendingPin = null;
+        web.evaluateJavascript("window.__joinPin && window.__joinPin('" + p + "')", null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String p = pinFrom(intent);
+        if (p != null) { pendingPin = p; deliverPin(); }
     }
 
     private static String mime(String path) {
@@ -224,6 +256,17 @@ public class MainActivity extends Activity {
             long d = Math.max(1, Math.min(400, ms));
             if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(d, VibrationEffect.DEFAULT_AMPLITUDE));
             else v.vibrate(d);
+        }
+
+        // 초대 링크 보내기: 휴대폰 공유 창 (카카오톡, 문자 등)
+        @JavascriptInterface
+        public void share(String text) {
+            runOnUiThread(() -> {
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("text/plain");
+                send.putExtra(Intent.EXTRA_TEXT, text);
+                try { startActivity(Intent.createChooser(send, "친구 대결 초대")); } catch (Exception ignored) { }
+            });
         }
 
         @JavascriptInterface

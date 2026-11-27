@@ -120,14 +120,62 @@ const bTopic = (pin, k) => `otilingo/v1/${pin}/${k}`;
 function bEveryMs(fn, ms) { const t = setInterval(fn, ms); BT.timers.push(t); return t; }
 function bClearTimers() { BT.timers.forEach(clearInterval); BT.timers = []; clearTimeout(BT.next); BT.next = null; }
 
-function openBattle() {
-  if (!curSub().ready) return;
+function openBattle(view = 'menu') {
+  if (!curSub().ready && view === 'menu') return;
   BT.el = BT.el || Object.assign(document.createElement('div'), { id: 'battle' });
   if (!BT.el.isConnected) document.body.appendChild(BT.el);
   BT.el.hidden = false; document.body.classList.add('bopen');
   BT.me = BT.me || { id: Math.random().toString(36).slice(2, 10) };
   BT.setup = BT.setup || { u: 'all', n: 10, d: 20 };
-  bGo('menu');
+  bGo(view);
+}
+
+/* ── 초대 링크 ── */
+// 웹으로 올린 주소에서 열었으면 그 주소, 앱이나 claude.ai에서는 오티링고 웹 주소
+const INVITE_BASE = (() => {
+  const h = location.hostname;
+  if (/^https?:$/.test(location.protocol) && h && !/appassets\.androidplatform\.net$|claude|anthropic|^127\.|^localhost$/.test(h)) return location.origin + location.pathname.replace(/index\.html$/, '');
+  return 'https://messioftft.netlify.app/';
+})();
+const inviteLink = pin => `${INVITE_BASE}?join=${pin}`;
+function inviteText() {
+  const info = (BT.c && BT.c.info) || {};
+  return `오티링고 ${info.subName || ''} 친구 대결에 초대합니다.\n방 번호: ${BT.pin}\n${inviteLink(BT.pin)}`;
+}
+function bCopy(text, done) {
+  let ok = false;
+  try { if (NATIVE && NATIVE.copy) { NATIVE.copy(text); ok = true; } } catch (e) { }
+  if (!ok) {
+    const ta = Object.assign(document.createElement('textarea'), { value: text }); ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (e) { } ta.remove();
+  }
+  if (!ok && navigator.clipboard) { navigator.clipboard.writeText(text).then(() => toast(done), () => toast('복사하지 못했습니다')); return; }
+  toast(ok ? done : '복사하지 못했습니다');
+}
+async function bShare() {
+  const text = inviteText();
+  try { if (NATIVE && NATIVE.share) { NATIVE.share(text); return; } } catch (e) { }
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  bCopy(text, '초대 링크를 복사했습니다. 메신저에 붙여 넣으십시오.');
+}
+// 초대 링크로 열었을 때 (웹: ?join=, 앱: otilingo://join/방번호)
+window.__joinPin = pin => {
+  pin = String(pin || '').replace(/\D/g, '');
+  if (!/^[1-9]\d{5}$/.test(pin)) return false;
+  if (BT.role && BT.pin === pin) return true;
+  if (BT.role) { toast('지금 대결 중입니다. 나간 뒤에 다시 링크를 누르십시오.'); return true; }
+  closeModal();
+  BT.invitePin = pin; openBattle('join');
+  return true;
+};
+{
+  const q = new URLSearchParams(location.search).get('join') || (location.hash.match(/join=(\d{6})/) || [])[1];
+  if (q) {
+    try { history.replaceState(null, '', location.pathname); } catch (e) { }
+    setTimeout(() => window.__joinPin(q), 0);
+  }
 }
 function closeBattle() {
   bLeave(); BT.view = 'closed';
@@ -147,7 +195,7 @@ function bLeave() {
 }
 function bGo(view) { BT.view = view; bRender(); }
 function bBack() {
-  if (BT.view === 'menu' || BT.view === 'join' || BT.view === 'setup' || BT.view === 'error') { if (BT.view === 'menu' || BT.view === 'error') closeBattle(); else bGo('menu'); return; }
+  if (BT.view === 'menu' || BT.view === 'join' || BT.view === 'setup' || BT.view === 'error') { if (BT.view === 'menu' || BT.view === 'error' || (BT.view === 'join' && BT.invitePin)) closeBattle(); else bGo('menu'); return; }
   if (BT.c && BT.c.phase === 'end') { closeBattle(); return; }
   modal(`<h3>대결에서 나가시겠습니까?</h3><p>${BT.role === 'host' ? '방장이 나가면 방이 닫혀서 친구들도 더 이상 풀 수 없습니다.' : '지금 나가면 이번 대결 점수는 사라집니다.'}</p>
     <button class="btn wide" data-act="stay">계속하기</button><button class="btn wide ghost danger" data-act="leave">나가기</button>`,
@@ -455,16 +503,19 @@ function bSetupHtml() {
 }
 function bJoinHtml() {
   return `<h2 class="bh2">친구 방에 참가하기</h2>
-    <label class="bfield"><span>방 번호</span><input id="bpin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="숫자 여섯 자리" class="bpin"></label>
+    <label class="bfield"><span>방 번호</span><input id="bpin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="숫자 여섯 자리" class="bpin" value="${esc(BT.invitePin || '')}"></label>
     <label class="bfield"><span>내 별명</span><input id="bname" maxlength="10" autocomplete="off" placeholder="예: 한문짱" value="${esc(bName())}"></label>
     <button class="btn wide sky" data-b="go">들어가기</button>
-    <p class="bnote">방장 화면에 보이는 여섯 자리 번호를 넣습니다. 방장과 같은 과목 문제가 나옵니다.</p>`;
+    ${BT.invitePin ? `<p class="bnote">초대 링크로 들어왔습니다. 별명을 확인하고 들어가기를 누르십시오.</p>`
+      : `<p class="bnote">방장 화면에 보이는 여섯 자리 번호를 넣습니다. 방장과 같은 과목 문제가 나옵니다.</p>`}
+    ${BT.invitePin && !NATIVE && /Android/i.test(navigator.userAgent) ? `<a class="btn wide ghost" href="intent://join/${esc(BT.invitePin)}#Intent;scheme=otilingo;package=com.hoenggi.ilsin;end">오티링고 앱이 있으면 앱으로 열기</a>` : ''}`;
 }
 function bLobbyHtml() {
   const c = BT.c, info = c.info || {}, host = BT.role === 'host';
   return `<div class="bpinbox"><small>방 번호</small><b>${esc(BT.pin.replace(/(\d{3})(\d{3})/, '$1 $2'))}</b>
       <span>${esc(info.subName || '')} · ${esc(info.range || '')} · ${info.n || ''}문제</span></div>
-    ${host ? `<p class="bhint">친구에게 이 번호를 알려 주십시오. 친구는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 됩니다.</p>` : `<p class="bhint">들어왔습니다. 방장이 시작하면 문제가 나옵니다.</p>`}
+    ${host ? `<p class="bhint">초대 링크를 보내거나 방 번호를 알려 주십시오. 번호는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 됩니다.</p>` : `<p class="bhint">들어왔습니다. 방장이 시작하면 문제가 나옵니다.</p>`}
+    <div class="binv"><button class="btn sky" data-b="share">초대 링크 보내기</button><button class="btn ghost" data-b="copy">링크 복사</button></div>
     <h3 class="sect">참가자 <span class="bpc"></span></h3>
     <div class="bplist"></div>
     ${host ? `<button class="btn wide bgo" data-b="start">대결 시작</button>` : `<div class="bcenter small"><div class="bspin"></div></div>`}`;
@@ -563,7 +614,9 @@ document.addEventListener('click', ev => {
   else if (a === 'close') closeBattle();
   else if (a === 'menu') { bLeave(); bGo('menu'); }
   else if (a === 'setup') { if (!bName()) { toast('별명을 먼저 써 주십시오'); nameIn && nameIn.focus(); return; } bGo('setup'); }
-  else if (a === 'join') bGo('join');
+  else if (a === 'join') { BT.invitePin = ''; bGo('join'); }
+  else if (a === 'share') bShare();
+  else if (a === 'copy') bCopy(inviteText(), '초대 링크를 복사했습니다');
   else if (a === 'host') bHostStart();
   else if (a === 'go') bJoin();
   else if (a === 'start') hostStartGame();
