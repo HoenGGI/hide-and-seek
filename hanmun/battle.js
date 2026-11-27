@@ -1,7 +1,7 @@
 'use strict';
 /* ════════ 친구와 대결 — 같은 문제를 동시에 풀고 빠르고 정확할수록 점수가 높은 실시간 퀴즈 ════════
-   방장이 방 번호를 만들면 친구들이 그 번호로 들어와요. 휴대폰끼리는 공개 MQTT 중계 서버를 거쳐 이야기해요.
-   주고받는 것은 별명 · 문제 번호 · 고른 답 · 점수뿐이고, 문제 내용은 각자 앱에 들어 있는 것을 보여 줘요. */
+   방장이 방 번호를 만들면 친구들이 그 번호로 들어옵니다. 휴대폰끼리는 공개 MQTT 중계 서버를 거쳐 이야기합니다.
+   주고받는 것은 별명 · 문제 번호 · 고른 답 · 점수뿐이고, 문제 내용은 각자 앱에 들어 있는 것을 보여 줍니다. */
 
 /* ── 작은 MQTT 3.1.1 클라이언트 (WebSocket, QoS 0) ── */
 const MQ_BROKERS = (() => {
@@ -149,7 +149,7 @@ function bGo(view) { BT.view = view; bRender(); }
 function bBack() {
   if (BT.view === 'menu' || BT.view === 'join' || BT.view === 'setup' || BT.view === 'error') { if (BT.view === 'menu' || BT.view === 'error') closeBattle(); else bGo('menu'); return; }
   if (BT.c && BT.c.phase === 'end') { closeBattle(); return; }
-  modal(`<h3>대결에서 나갈까요?</h3><p>${BT.role === 'host' ? '방장이 나가면 방이 닫혀서 친구들도 더 이상 풀 수 없어요.' : '지금 나가면 이번 대결 점수는 사라져요.'}</p>
+  modal(`<h3>대결에서 나가시겠습니까?</h3><p>${BT.role === 'host' ? '방장이 나가면 방이 닫혀서 친구들도 더 이상 풀 수 없습니다.' : '지금 나가면 이번 대결 점수는 사라집니다.'}</p>
     <button class="btn wide" data-act="stay">계속하기</button><button class="btn wide ghost danger" data-act="leave">나가기</button>`,
     { stay: closeModal, leave: () => { closeModal(); closeBattle(); } });
 }
@@ -162,15 +162,15 @@ async function bConnect(idx) {
 }
 async function bHostStart() {
   const name = bClean($('#bname', BT.el) && $('#bname', BT.el).value) || bName();
-  if (!name) { toast('별명을 먼저 써 주세요'); return; }
+  if (!name) { toast('별명을 먼저 써 주십시오'); return; }
   S.bname = name; save();
   const st = BT.setup, sub = curSub();
   const pool = battlePool(sub.id, st.u);
-  if (pool.length < 4) { toast('이 범위에는 대결할 문제가 모자라요'); return; }
+  if (pool.length < 4) { toast('이 범위에는 대결할 문제가 모자랍니다'); return; }
   bGo('connecting');
   let mq = null, idx = 0;
   for (; idx < MQ_BROKERS.length && !mq; idx++) { try { mq = await bConnect(idx); } catch (e) { mq = null; } }
-  if (!mq) { BT.err = '대결 서버에 연결하지 못했어요. 인터넷(와이파이나 데이터)이 켜져 있는지 확인하고 다시 해 보세요.'; bGo('error'); return; }
+  if (!mq) { BT.err = '대결 서버에 연결하지 못했습니다. 인터넷(와이파이나 데이터)이 켜져 있는지 확인하고 다시 해 보십시오.'; bGo('error'); return; }
   if (BT.view !== 'connecting') { mq.close(); return; }
   idx--;
   BT.mq = mq; BT.role = 'host';
@@ -192,13 +192,13 @@ async function bHostStart() {
 async function bJoin() {
   const pin = String(($('#bpin', BT.el) || {}).value || '').replace(/\D/g, '');
   const name = bClean(($('#bname', BT.el) || {}).value) || bName();
-  if (!name) { toast('별명을 먼저 써 주세요'); return; }
-  if (!/^[1-9]\d{5}$/.test(pin) || +pin[0] > MQ_BROKERS.length) { toast('방 번호 여섯 자리를 확인해 주세요'); return; }
+  if (!name) { toast('별명을 먼저 써 주십시오'); return; }
+  if (!/^[1-9]\d{5}$/.test(pin) || +pin[0] > MQ_BROKERS.length) { toast('방 번호 여섯 자리를 확인해 주십시오'); return; }
   S.bname = name; save();
   bGo('connecting');
   let mq = null;
   try { mq = await bConnect(+pin[0] - 1); } catch (e) { mq = null; }
-  if (!mq) { BT.err = '대결 서버에 연결하지 못했어요. 인터넷(와이파이나 데이터)이 켜져 있는지 확인하고 다시 해 보세요.'; bGo('error'); return; }
+  if (!mq) { BT.err = '대결 서버에 연결하지 못했습니다. 인터넷(와이파이나 데이터)이 켜져 있는지 확인하고 다시 해 보십시오.'; bGo('error'); return; }
   if (BT.view !== 'connecting') { mq.close(); return; }
   BT.mq = mq; BT.role = 'player'; BT.pin = pin; BT.myName = name;
   BT.c = { phase: 'wait', players: [], heard: 0, joinedAt: Date.now() };
@@ -210,7 +210,7 @@ async function bJoin() {
   bEveryMs(() => {
     const c = BT.c; if (!c) return;
     if (!c.heard) {
-      if (Date.now() - c.joinedAt > 9000) { BT.err = `${pin}번 방을 찾지 못했어요. 방 번호가 맞는지, 방장이 방을 열어 두었는지 확인해 주세요.`; bLeave(); bGo('error'); return; }
+      if (Date.now() - c.joinedAt > 9000) { BT.err = `${pin}번 방을 찾지 못했습니다. 방 번호가 맞는지, 방장이 방을 열어 두었는지 확인해 주십시오.`; bLeave(); bGo('error'); return; }
       hello(); return;
     }
     BT.mq && BT.mq.pub(bTopic(pin, 'p'), c.inRoom ? { t: 'hb', id: BT.me.id } : { t: 'join', id: BT.me.id, name });
@@ -232,7 +232,7 @@ async function bReconnect() {
 }
 function bLostCheck() {
   const c = BT.c; if (!c || BT.role !== 'player' || !c.heard || c.phase === 'end' || c.phase === 'closed') return;
-  bBanner(Date.now() - c.heard > 12000 ? '방장과 연결이 잠시 끊겼어요. 기다리는 중…' : '');
+  bBanner(Date.now() - c.heard > 12000 ? '방장과 연결이 잠시 끊겼습니다. 기다리는 중…' : '');
 }
 function bBanner(msg) { const b = BT.el && $('.bbanner', BT.el); if (b) { b.textContent = msg; b.hidden = !msg; } }
 
@@ -306,7 +306,7 @@ function hostTick() {
 }
 function hostStartGame() {
   const H = BT.host; if (!H || H.phase !== 'lobby') return;
-  if (H.players.size < 2) { toast('친구가 한 명 이상 들어와야 시작할 수 있어요'); return; }
+  if (H.players.size < 2) { toast('친구가 한 명 이상 들어와야 시작할 수 있습니다'); return; }
   H.qs = battlePick(battlePool(H.sub, H.uid), H.n); H.n = H.qs.length;
   H.players.forEach(p => { p.score = 0; p.streak = 0; p.right = 0; });
   H.i = -1; H.phase = 'rev'; hostNext();
@@ -347,7 +347,7 @@ function clientOnMsg(m) {
     c.players = ps;
     if (BT.role === 'player') {
       const was = c.inRoom; c.inRoom = ps.some(p => p.id === BT.me.id);
-      if (!c.inRoom && was) { c.phase = 'closed'; c.why = '방장이 나를 방에서 내보냈어요.'; bRender(); return; }
+      if (!c.inRoom && was) { c.phase = 'closed'; c.why = '방장이 나를 방에서 내보냈습니다.'; bRender(); return; }
       if (!c.inRoom) return;
     }
     if (c.phase !== 'lobby') { c.phase = 'lobby'; c.myRight = 0; bRender(); } else bRenderLobbyList();
@@ -384,7 +384,7 @@ function clientOnMsg(m) {
     sfx.done(); buzz(40); bRender();
     return;
   }
-  if (m.t === 'bye' && BT.role === 'player' && c.phase !== 'end') { c.phase = 'closed'; c.why = '방장이 방을 닫았어요.'; bRender(); }
+  if (m.t === 'bye' && BT.role === 'player' && c.phase !== 'end') { c.phase = 'closed'; c.why = '방장이 방을 닫았습니다.'; bRender(); }
 }
 const bBoard = b => b.filter(p => p && typeof p.id === 'string').slice(0, B_MAX)
   .map(p => ({ id: p.id, name: bClean(p.name) || '친구', score: Math.max(0, Math.round(+p.score || 0)), streak: Math.max(0, +p.streak || 0), right: Math.max(0, +p.right || 0) }));
@@ -417,10 +417,10 @@ function bRender() {
   else if (v === 'setup') body = bSetupHtml();
   else if (v === 'join') body = bJoinHtml();
   else if (v === 'connecting') body = `<div class="bcenter"><div class="bspin"></div><p>대결 서버에 연결하는 중…</p></div>`;
-  else if (v === 'error') body = `<div class="bcenter"><p>${esc(BT.err || '문제가 생겼어요.')}</p><button class="btn wide" data-b="menu">처음으로</button></div>`;
-  else if (c) body = c.phase === 'wait' ? `<div class="bcenter"><div class="bspin"></div><p>${c.heard ? '이미 시작한 대결이에요. 다음 문제부터 같이 풀어요.' : esc(BT.pin) + '번 방에 들어가는 중…'}</p></div>`
+  else if (v === 'error') body = `<div class="bcenter"><p>${esc(BT.err || '문제가 생겼습니다.')}</p><button class="btn wide" data-b="menu">처음으로</button></div>`;
+  else if (c) body = c.phase === 'wait' ? `<div class="bcenter"><div class="bspin"></div><p>${c.heard ? '이미 시작한 대결입니다. 다음 문제부터 같이 풀 수 있습니다.' : esc(BT.pin) + '번 방에 들어가는 중…'}</p></div>`
     : c.phase === 'lobby' ? bLobbyHtml() : c.phase === 'q' ? bQuestionHtml() : c.phase === 'rev' ? bRevealHtml() : c.phase === 'end' ? bEndHtml()
-    : `<div class="bcenter"><p>${esc(c.why || '대결이 끝났어요.')}</p><button class="btn wide" data-b="close">나가기</button></div>`;
+    : `<div class="bcenter"><p>${esc(c.why || '대결이 끝났습니다.')}</p><button class="btn wide" data-b="close">나가기</button></div>`;
   const title = BT.pin ? `방 번호 <b>${esc(BT.pin)}</b>` : '친구와 대결';
   el.innerHTML = `<div class="bhead"><button class="iconbtn" data-b="back" aria-label="나가기">${icon('x', 26)}</button><div class="btitle">${title}</div></div>
     <div class="bbanner" hidden></div><div class="bbody"><div class="bin">${body}</div></div>`;
@@ -431,11 +431,11 @@ function bRender() {
 function bMenuHtml() {
   const sub = curSub();
   return `<div class="bhero"><div class="bshapes">${[0, 1, 2, 3].map(i => `<span class="c-${B_COLORS[i]}">${bShape(i, 30)}</span>`).join('')}</div>
-      <h2>친구와 ${esc(sub.name)} 대결</h2><p>같은 문제를 동시에 풀고, 빨리 맞힐수록 점수를 더 받아요.</p></div>
+      <h2>친구와 ${esc(sub.name)} 대결</h2><p>같은 문제를 동시에 풀고, 빨리 맞힐수록 점수를 더 받습니다.</p></div>
     <label class="bfield"><span>내 별명</span><input id="bname" maxlength="10" autocomplete="off" placeholder="예: 역사왕" value="${esc(bName())}"></label>
     <button class="btn wide" data-b="setup">${icon('crown', 22)} 방 만들기</button>
     <button class="btn wide sky" data-b="join">${icon('user', 22)} 친구 방에 참가하기</button>
-    <p class="bnote">인터넷이 연결되어 있어야 해요. 별명과 답은 공개 중계 서버를 거쳐 친구 휴대폰으로 가니, 실명이나 개인정보는 쓰지 마세요.</p>`;
+    <p class="bnote">인터넷이 연결되어 있어야 합니다. 별명과 답은 공개 중계 서버를 거쳐 친구 휴대폰으로 가니, 실명이나 개인정보는 쓰지 마십시오.</p>`;
 }
 function bSetupHtml() {
   const sub = curSub(), st = BT.setup;
@@ -450,7 +450,7 @@ function bSetupHtml() {
     <div class="goals">${[5, 10, 15, 20].map(n => `<button class="chip ${st.n === n ? 'on' : ''}" data-bn="${n}">${n}문제</button>`).join('')}</div>
     <h3 class="sect">문제당 시간</h3>
     <div class="goals">${[10, 20, 30].map(d => `<button class="chip ${st.d === d ? 'on' : ''}" data-bd="${d}">${d}초<small>${{ 10: '번개', 20: '보통', 30: '여유' }[d]}</small></button>`).join('')}</div>
-    <p class="bnote">긴 문제는 10초를 더 줘요.</p>
+    <p class="bnote">긴 문제는 10초를 더 줍니다.</p>
     <button class="btn wide bgo" data-b="host">방 열기</button>`;
 }
 function bJoinHtml() {
@@ -458,13 +458,13 @@ function bJoinHtml() {
     <label class="bfield"><span>방 번호</span><input id="bpin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="숫자 여섯 자리" class="bpin"></label>
     <label class="bfield"><span>내 별명</span><input id="bname" maxlength="10" autocomplete="off" placeholder="예: 한문짱" value="${esc(bName())}"></label>
     <button class="btn wide sky" data-b="go">들어가기</button>
-    <p class="bnote">방장 화면에 보이는 여섯 자리 번호를 넣어요. 방장과 같은 과목 문제가 나와요.</p>`;
+    <p class="bnote">방장 화면에 보이는 여섯 자리 번호를 넣습니다. 방장과 같은 과목 문제가 나옵니다.</p>`;
 }
 function bLobbyHtml() {
   const c = BT.c, info = c.info || {}, host = BT.role === 'host';
   return `<div class="bpinbox"><small>방 번호</small><b>${esc(BT.pin.replace(/(\d{3})(\d{3})/, '$1 $2'))}</b>
       <span>${esc(info.subName || '')} · ${esc(info.range || '')} · ${info.n || ''}문제</span></div>
-    ${host ? `<p class="bhint">친구에게 이 번호를 알려 주세요. 친구는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 돼요.</p>` : `<p class="bhint">들어왔어요. 방장이 시작하면 문제가 나와요.</p>`}
+    ${host ? `<p class="bhint">친구에게 이 번호를 알려 주십시오. 친구는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 됩니다.</p>` : `<p class="bhint">들어왔습니다. 방장이 시작하면 문제가 나옵니다.</p>`}
     <h3 class="sect">참가자 <span class="bpc"></span></h3>
     <div class="bplist"></div>
     ${host ? `<button class="btn wide bgo" data-b="start">대결 시작</button>` : `<div class="bcenter small"><div class="bspin"></div></div>`}`;
@@ -485,7 +485,7 @@ function bQuestionHtml() {
     title = hzWrap(q.item.q); box = ex.prompt;
     opts = q.ord.map(j => q.item.hz ? `<span class="hz">${esc(o[j])}</span>` : hzWrap(o[j]));
   } else {
-    title = esc(String(q.txt.q || '문제를 불러오지 못했어요. 앱을 최신 버전으로 업데이트해 주세요.').slice(0, 300));
+    title = esc(String(q.txt.q || '문제를 불러오지 못했습니다. 앱을 최신 버전으로 업데이트해 주십시오.').slice(0, 300));
     opts = (Array.isArray(q.txt.o) ? q.txt.o : []).slice(0, 4).map(v => esc(String(v).slice(0, 120)));
   }
   const long = opts.some(h => h.replace(/<[^>]+>/g, '').length > 14);
@@ -493,7 +493,7 @@ function bQuestionHtml() {
     <div class="btbar"><i></i></div>
     <div class="bq"><h2 class="bqt">${title}</h2>${box}</div>
     <div class="btiles${long ? ' long' : ''}${q.item && q.item.hz ? ' hzt' : ''}">${opts.map((h, j) => `<button class="btile c-${B_COLORS[j]}" data-bt="${j}"><span class="bts">${bShape(j)}</span><span class="btx">${h}</span></button>`).join('')}</div>
-    <p class="bwait" hidden>답을 냈어요. 다른 친구들을 기다리는 중…</p>`;
+    <p class="bwait" hidden>답을 냈습니다. 다른 친구들을 기다리는 중…</p>`;
 }
 function bStartClock() {
   const q = BT.c.q, bar = $('.btbar i', BT.el), num = $('.bclock', BT.el);
@@ -512,14 +512,14 @@ function bRevealHtml() {
   const myRank = r.board.findIndex(p => p.id === BT.me.id) + 1;
   const mine = r.board[myRank - 1];
   const last = q.i + 1 >= r.n;
-  return `<div class="brev ${me.ok ? 'ok' : 'no'}"><b>${me.ok ? '정답!' : me.c < 0 ? '시간 초과' : '틀렸어요'}</b>
+  return `<div class="brev ${me.ok ? 'ok' : 'no'}"><b>${me.ok ? '정답!' : me.c < 0 ? '시간 초과' : '틀렸습니다'}</b>
       <span>${me.ok ? `+${me.gain}점${mine && mine.streak > 1 ? ` · ${mine.streak}연속 정답` : ''}` : '0점'}</span></div>
     <div class="bans"><small>정답</small><div class="bansv"><span class="bts c-${B_COLORS[r.right]}">${bShape(r.right, 18)}</span>${rightHtml}</div>
       ${q.item && q.item.exp ? `<p class="bexp">${hzWrap(q.item.exp)}</p>` : ''}</div>
     <h3 class="sect">순위 <small class="bmyrank">나는 ${myRank}등</small></h3>
     ${bRankList(r.board.slice(0, 5))}
-    ${BT.role === 'host' ? `<button class="btn wide bgo" data-b="next">${last ? '최종 결과 보기' : '다음 문제'} ›</button><p class="bnote">8초 뒤에 자동으로 넘어가요.</p>`
-      : `<p class="bnote">${last ? '잠시 후 최종 결과가 나와요.' : '잠시 후 다음 문제가 나와요.'}</p>`}`;
+    ${BT.role === 'host' ? `<button class="btn wide bgo" data-b="next">${last ? '최종 결과 보기' : '다음 문제'} ›</button><p class="bnote">8초 뒤에 자동으로 넘어갑니다.</p>`
+      : `<p class="bnote">${last ? '잠시 후 최종 결과가 나옵니다.' : '잠시 후 다음 문제가 나옵니다.'}</p>`}`;
 }
 function bRankList(list) {
   return `<ol class="brank">${list.map((p, i) => `<li class="${p.id === BT.me.id ? 'me' : ''}"><span class="brk">${i + 1}</span><span class="brn">${esc(p.name)}${p.id === BT.me.id ? ' (나)' : ''}</span><b>${p.score.toLocaleString()}</b></li>`).join('')}</ol>`;
@@ -531,8 +531,8 @@ function bEndHtml() {
     <div class="bpod">${pod.map((p, i) => p ? `<div class="bpd p${[2, 1, 3][i]}${p.id === BT.me.id ? ' me' : ''}"><span class="bpn">${esc(p.name)}</span><span class="bps">${p.score.toLocaleString()}</span><div class="bpb">${[2, 1, 3][i]}</div></div>` : '<div class="bpd empty"></div>').join('')}</div>
     <div class="bmine"><b>${myRank ? `${myRank}등` : ''}</b> ${me ? `${me.right}문제 맞힘 · ${me.score.toLocaleString()}점` : ''}<span>+${c.xp || 0} XP</span></div>
     ${b.length > 3 ? bRankList(b) : ''}
-    <p class="bnote">틀린 문제는 오답 노트에 모아 두었어요.</p>
-    ${BT.role === 'host' ? `<button class="btn wide bgo" data-b="again">같은 친구들과 한 번 더</button>` : `<p class="bnote">방장이 한 번 더 하면 자동으로 이어져요.</p>`}
+    <p class="bnote">틀린 문제는 오답 노트에 모아 두었습니다.</p>
+    ${BT.role === 'host' ? `<button class="btn wide bgo" data-b="again">같은 친구들과 한 번 더</button>` : `<p class="bnote">방장이 한 번 더 하면 자동으로 이어집니다.</p>`}
     <button class="btn wide ghost" data-b="close">나가기</button>`;
 }
 function bConfetti() {
@@ -562,7 +562,7 @@ document.addEventListener('click', ev => {
   if (a === 'back') bBack();
   else if (a === 'close') closeBattle();
   else if (a === 'menu') { bLeave(); bGo('menu'); }
-  else if (a === 'setup') { if (!bName()) { toast('별명을 먼저 써 주세요'); nameIn && nameIn.focus(); return; } bGo('setup'); }
+  else if (a === 'setup') { if (!bName()) { toast('별명을 먼저 써 주십시오'); nameIn && nameIn.focus(); return; } bGo('setup'); }
   else if (a === 'join') bGo('join');
   else if (a === 'host') bHostStart();
   else if (a === 'go') bJoin();
@@ -587,5 +587,5 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && BT
 // 퀴즈 화면 맨 위 카드
 function battleCard() {
   return `<button class="bcard" data-battle="1"><span class="bcs">${[0, 1, 2, 3].map(i => `<i class="c-${B_COLORS[i]}">${bShape(i, 16)}</i>`).join('')}</span>
-    <span class="bct"><b>친구와 대결</b><small>방 번호로 모여서 같은 문제를 동시에 풀어요</small></span><span class="bcg">›</span></button>`;
+    <span class="bct"><b>친구와 대결</b><small>방 번호로 모여서 같은 문제를 동시에 풀 수 있습니다</small></span><span class="bcg">›</span></button>`;
 }

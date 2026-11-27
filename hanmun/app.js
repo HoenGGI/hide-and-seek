@@ -228,7 +228,7 @@ const X = {
     const ds = distract(3, prefer(POOL.chars, c.u), x => x.ch !== c.ch && x.hun !== c.hun, x => x.hun);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: c.k, item: c, title: '이 한자의 훈과 음을 고르세요', layout: 'grid2',
+      type: 'choice', key: c.k, item: c, title: '이 한자의 훈과 음을 고르시오', layout: 'grid2',
       prompt: `<div class="bighz hz">${c.ch}</div>`,
       opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: `${c.ch} ${c.hun}`, say: c.hun, exp: ''
     };
@@ -237,7 +237,7 @@ const X = {
     const ds = distract(3, prefer(POOL.chars, c.u), x => x.ch !== c.ch && x.hun !== c.hun, x => x.ch);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: c.k, item: c, title: `'${c.hun}'에 알맞은 한자를 고르세요`, layout: 'grid2 hzopts',
+      type: 'choice', key: c.k, item: c, title: `'${c.hun}'에 알맞은 한자를 고르시오`, layout: 'grid2 hzopts',
       prompt: `<div class="bubble">${esc(c.hun)}</div>`,
       opts: shuffle([c, ...ds]).map(x => ({ v: x.ch, html: `<span class="hz">${x.ch}</span>`, d: x.hun })), ans: c.ch, answerText: `${c.ch} (${c.hun})`, say: c.hun
     };
@@ -247,16 +247,16 @@ const X = {
     const uniqHun = distract(5, cs, () => true, x => x.hun);
     if (uniqHun.length < 3) return null;
     const pairs = uniqHun.map(c => [c.ch, c.hun]);
-    return { type: 'match', key: 'm:' + uniqHun.map(c => c.ch).join(''), title: title || '한자와 훈음을 짝지으세요', pairs, hz: [1, 0], answerText: pairText(pairs) };
+    return { type: 'match', key: 'm:' + uniqHun.map(c => c.ch).join(''), title: title || '한자와 훈음을 짝지으시오', pairs, hz: [1, 0], answerText: pairText(pairs) };
   },
   pairs(p) { const pairs = shuffle(p.p).slice(0, 5); return { type: 'match', key: p.k, item: p, title: p.t, pairs, hz: p.hz, answerText: pairText(pairs) }; },
   wordEum(w) {
     let ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.r.length === w.r.length && x.r !== w.r, x => x.r).map(x => ({ v: x.r, d: `${x.h}의 독음` }));
-    if (w.h[0] === '不') { const alt = (w.r[0] === '부' ? '불' : '부') + w.r.slice(1); ds = [{ v: alt, d: '不은 뒤 글자의 첫소리가 ㄷ·ㅈ이면 "부", 그 밖에는 "불"로 읽어요' }, ...ds.filter(d => d.v !== alt)].slice(0, 3); }
+    if (w.h[0] === '不') { const alt = (w.r[0] === '부' ? '불' : '부') + w.r.slice(1); ds = [{ v: alt, d: '不은 뒤 글자의 첫소리가 ㄷ·ㅈ이면 "부", 그 밖에는 "불"로 읽습니다' }, ...ds.filter(d => d.v !== alt)].slice(0, 3); }
     let guard = 0;
     while (ds.length < 3 && guard++ < 50) { const f = fakeReading(w.r); if (f !== w.r && !ds.some(d => d.v === f)) ds.push({ v: f, d: '' }); }
     return {
-      type: 'choice', key: w.k, item: w, title: '이 어휘의 독음을 고르세요', layout: 'grid2',
+      type: 'choice', key: w.k, item: w, title: '이 어휘의 독음을 고르시오', layout: 'grid2',
       prompt: `<div class="bighz hz word">${w.h}</div>`, opts: shuffle([{ v: w.r, d: '' }, ...ds]).map(o => ({ v: o.v, html: esc(o.v), d: o.d })), ans: w.r, answerText: w.r, say: w.r, exp: expOf(w)
     };
   },
@@ -264,7 +264,7 @@ const X = {
     const ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.m !== w.m, x => x.m);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: w.k, item: w, title: '이 어휘의 뜻을 고르세요', layout: 'list',
+      type: 'choice', key: w.k, item: w, title: '이 어휘의 뜻을 고르시오', layout: 'list',
       prompt: `<div class="midhz hz">${w.h}</div><div class="rd">${esc(w.r)}</div>`,
       opts: shuffle([w, ...ds]).map(x => ({ v: x.m, html: esc(x.m), d: `${x.h}(${x.r})의 뜻` })), ans: w.m, answerText: w.m, say: w.r, exp: expOf(w)
     };
@@ -275,7 +275,7 @@ const X = {
     const all = ds.concat(more);
     if (all.length < 3) return null;
     return {
-      type: 'choice', key: w.k, item: w, title: '뜻에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
+      type: 'choice', key: w.k, item: w, title: '뜻에 알맞은 어휘를 고르시오', layout: 'grid2 hzopts',
       prompt: `<div class="bubble">${esc(w.m)}</div>`,
       opts: shuffle([w, ...all]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
@@ -284,7 +284,7 @@ const X = {
     const own = new Set(hzOf(w.h));
     const ds = distract(w.h.length > 2 ? 3 : 2, prefer(POOL.chars, w.u), x => !own.has(x.ch), x => x.ch).map(x => x.ch);
     return {
-      type: 'tiles', key: w.k, item: w, title: '뜻에 맞게 한자를 순서대로 고르세요', tcls: 'hz',
+      type: 'tiles', key: w.k, item: w, title: '뜻에 맞게 한자를 순서대로 고르시오', tcls: 'hz',
       prompt: `<div class="bubble"><b>${esc(w.r)}</b> · ${esc(w.m)}</div>`,
       tiles: shuffle([...hzOf(w.h), ...ds]), ans: hzOf(w.h), join: '', answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
@@ -294,7 +294,7 @@ const X = {
     const ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h, x => x.h);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: w.k, item: w, title: '빈칸에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
+      type: 'choice', key: w.k, item: w, title: '빈칸에 알맞은 어휘를 고르시오', layout: 'grid2 hzopts',
       prompt: `<div class="cloze">${esc(w.ex).replace('○', '<span class="blank"></span>')}</div>`,
       opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
@@ -302,7 +302,7 @@ const X = {
   typeEum(item) {
     const r = reading(item);
     return {
-      type: 'type', key: item.k, item, title: '독음을 한글로 써 보세요',
+      type: 'type', key: item.k, item, title: '독음을 한글로 쓰시오',
       prompt: item.kind === 'word' ? `<div class="bighz hz word">${item.h}</div>` : `<div class="sentence">${hzHtml(item.h)}</div>`,
       ans: [ansNorm(r), ansNorm(readingToe(item))], answerText: readingToe(item), say: readingToe(item), exp: expOf(item)
     };
@@ -311,7 +311,7 @@ const X = {
     const ds = distract(3, prefer(POOL.words, w.u), x => x.h !== w.h && x.r !== w.r, x => x.h);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: w.k, item: w, title: '들리는 어휘를 한자로 고르세요', layout: 'grid2 hzopts', listen: w.r,
+      type: 'choice', key: w.k, item: w, title: '들리는 어휘를 한자로 고르시오', layout: 'grid2 hzopts', listen: w.r,
       prompt: `<div class="listen"><button class="spk big" data-say="${esc(w.r)}" aria-label="다시 듣기">${icon('speaker', 40)}</button><button class="spk slow" data-say="${esc(w.r)}" data-slow="1" aria-label="천천히 듣기">천천히</button></div>`,
       opts: shuffle([w, ...ds]).map(x => ({ v: x.h, html: `<span class="hz">${x.h}</span>`, d: `${x.r} · ${x.m}` })), ans: w.h, answerText: `${w.h} (${w.r})`, say: w.r, exp: expOf(w)
     };
@@ -320,7 +320,7 @@ const X = {
     const eums = s.c.map(eumOf), have = new Set(eums);
     const ds = distract(2, prefer(POOL.chars, s.u), x => !have.has(eumOf(x.hun)), x => eumOf(x.hun)).map(x => eumOf(x.hun));
     return {
-      type: 'tiles', key: s.k, item: s, title: '문장의 독음을 순서대로 맞추세요', tcls: 'eum',
+      type: 'tiles', key: s.k, item: s, title: '문장의 독음을 순서대로 맞추시오', tcls: 'eum',
       prompt: `<div class="sentence">${hzHtml(s.h)}</div>`, tiles: shuffle([...eums, ...ds]), ans: eums, join: '',
       answerText: readingToe(s), say: readingToe(s), exp: expOf(s)
     };
@@ -330,7 +330,7 @@ const X = {
     const others = prefer(POOL.sents, s.u).filter(x => x !== s).flatMap(x => tokens(x).map(t => ({ t, u: x.u })));
     const ds = distract(3, others, x => !have.has(x.t), x => x.t).map(x => x.t);
     return {
-      type: 'tiles', key: s.k, item: s, title: '문장을 풀이해 보세요', tcls: 'ko',
+      type: 'tiles', key: s.k, item: s, title: '문장을 풀이하시오', tcls: 'ko',
       prompt: `<div class="sentence">${hzHtml(s.h, { hints: s.c })}</div>${readLine(s)}`, tiles: shuffle([...tk, ...ds]), ans: tk, join: ' ',
       answerText: s.m, say: readingToe(s), exp: s.note || ''
     };
@@ -339,7 +339,7 @@ const X = {
     const own = new Set(hzOf(s.h));
     const ds = distract(3, prefer(POOL.chars, s.u), x => !own.has(x.ch), x => x.ch).map(x => x.ch);
     return {
-      type: 'tiles', key: s.k, item: s, title: '풀이에 맞게 한자를 배열하세요', tcls: 'hz',
+      type: 'tiles', key: s.k, item: s, title: '풀이에 맞게 한자를 배열하시오', tcls: 'hz',
       prompt: `<div class="bubble">${esc(s.m)}</div><div class="rd sub">${esc(readingToe(s))}</div>`,
       tiles: shuffle([...hzOf(s.h), ...ds]), ans: hzOf(s.h), join: '', answerText: s.h, say: readingToe(s), exp: s.m
     };
@@ -348,7 +348,7 @@ const X = {
     const ds = distract(3, prefer(POOL.sents, s.u), x => x !== s && x.m !== s.m, x => x.m);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: s.k, item: s, title: '알맞은 풀이를 고르세요', layout: 'list',
+      type: 'choice', key: s.k, item: s, title: '알맞은 풀이를 고르시오', layout: 'list',
       prompt: `<div class="sentence">${hzHtml(s.h, { hints: s.c })}</div>${readLine(s)}`,
       opts: shuffle([s, ...ds]).map(x => ({ v: x.m, html: esc(x.m), d: `${x.h}의 풀이` })), ans: s.m, answerText: s.m, say: readingToe(s), exp: s.note || ''
     };
@@ -360,7 +360,7 @@ const X = {
     const ds = distract(3, prefer(POOL.chars, s.u), x => x.ch !== c.ch && x.hun !== c.hun, x => x.hun);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: s.k, item: s, title: '표시한 한자의 훈과 음을 고르세요', layout: 'grid2',
+      type: 'choice', key: s.k, item: s, title: '표시한 한자의 훈과 음을 고르시오', layout: 'grid2',
       prompt: `<div class="sentence">${hzHtml(s.h, { mark: i })}</div>`,
       opts: shuffle([c, ...ds]).map(x => ({ v: x.hun, html: esc(x.hun), d: `${x.ch}의 훈음` })), ans: c.hun, answerText: `${c.ch} ${c.hun}`, say: c.hun, exp: expOf(s)
     };
@@ -369,7 +369,7 @@ const X = {
     if (!s.ord) return null;
     const chunks = s.ord.map(o => o[0]), ans = [...s.ord].sort((a, b) => a[1] - b[1]).map(o => o[0]);
     return {
-      type: 'tiles', key: s.k, item: s, title: '풀이하는 순서대로 한자를 누르세요', tcls: 'hz', ordered: true,
+      type: 'tiles', key: s.k, item: s, title: '풀이하는 순서대로 한자를 누르시오', tcls: 'hz', ordered: true,
       prompt: `<div class="sentence">${hzHtml(s.h, { hints: s.c })}</div><div class="bubble small">${esc(s.m)}</div>`,
       tiles: shuffle(chunks), ans, join: ' → ', answerText: ans.join(' → '), say: readingToe(s), exp: s.m
     };
@@ -407,7 +407,7 @@ const X = {
     const ds = distract(3, prefer(TERMS.filter(y => itemSub(y) === itemSub(x)), x.u), y => y.t !== x.t, y => y.t);
     if (ds.length < 3) return null;
     return {
-      type: 'choice', key: x.k, item: x, title: '설명에 알맞은 용어를 고르세요', layout: 'grid2', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`,
+      type: 'choice', key: x.k, item: x, title: '설명에 알맞은 용어를 고르시오', layout: 'grid2', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`,
       opts: shuffle([x, ...ds]).map(y => ({ v: y.t, html: hzWrap(y.t), d: y.d })), ans: x.t, answerText: x.t, say: '', exp: ''
     };
   },
@@ -420,12 +420,12 @@ const X = {
     };
   },
   termType(x) {
-    return { type: 'type', key: x.k, item: x, title: '설명에 알맞은 용어를 쓰세요', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`, ans: altAnswers(x.t), answerText: x.t, say: '', exp: '' };
+    return { type: 'type', key: x.k, item: x, title: '설명에 알맞은 용어를 쓰시오', prompt: `<div class="qbox">${hzWrap(x.d)}</div>`, ans: altAnswers(x.t), answerText: x.t, say: '', exp: '' };
   },
   cloze(z) {
     const ws = [z.a, ...z.w].map(h => WORDS[h]).filter(Boolean);
     return {
-      type: 'choice', key: z.k, item: z, title: '빈칸에 알맞은 어휘를 고르세요', layout: 'grid2 hzopts',
+      type: 'choice', key: z.k, item: z, title: '빈칸에 알맞은 어휘를 고르시오', layout: 'grid2 hzopts',
       prompt: `<div class="cloze">${esc(z.s).replace('○', '<span class="blank"></span>')}</div>`,
       opts: shuffle([z.a, ...z.w]).map(v => ({ v, html: `<span class="hz">${v}</span>`, d: describe(v) })), ans: z.a,
       answerText: WORDS[z.a] ? `${z.a} (${WORDS[z.a].r})` : z.a, say: WORDS[z.a] ? WORDS[z.a].r : '',
@@ -463,7 +463,7 @@ const T = {   // 새로 배우는 카드
     return {
       type: 'teach', key: 't:' + list.map(c => c.ch).join(''), say: list.map(c => c.hun).join(', '), html: `<div class="tag">새 한자</div>
       <div class="tchars many">${list.map(c => `<button class="tchar" data-say="${esc(c.hun)}"><span class="hz">${c.ch}</span><small>${esc(c.hun)}</small></button>`).join('')}</div>
-      <p class="thelp">글자를 누르면 훈음을 읽어 줘요.</p>`
+      <p class="thelp">글자를 누르면 훈음을 읽어 줍니다.</p>`
     };
   },
   terms(list) {
@@ -669,12 +669,12 @@ const PRACTICE = {
 
 /* ════════ 레슨 진행 ════════ */
 let LS = null, CUR = null;
-const PRAISE = ['정답!', '맞았어요', '좋아요', '정확해요', '맞아요'];
+const PRAISE = ['정답!', '맞았습니다', '좋습니다', '정확합니다', '맞습니다'];
 const lessonEl = () => $('#lesson');
 
 function startLesson(cfg) {
   const quiz = cfg.mode === 'quiz';
-  if (!cfg.ex || !cfg.ex.length) { toast('연습할 문제가 아직 없어요'); return; }
+  if (!cfg.ex || !cfg.ex.length) { toast('연습할 문제가 아직 없습니다'); return; }
   LS = Object.assign({ i: 0, solved: 0, right: 0, wrong: 0, combo: 0, t0: Date.now(), missed: new Set(), log: [] }, cfg);
   LS.q = cfg.ex.slice(); LS.total = cfg.ex.length;
   const el = lessonEl();
@@ -710,18 +710,18 @@ function footState(state, res) {
   if (state === 'match') { btn.textContent = '확인'; btn.disabled = true; btn.className = 'btn wide'; }
   if (state === 'ok' || state === 'no') {
     const ok = state === 'ok';
-    fb.innerHTML = `<div class="fbhead">${icon(ok ? 'check' : 'x', 22, 'fbicon')}<b>${ok ? pick(PRAISE) : '틀렸어요'}</b>
+    fb.innerHTML = `<div class="fbhead">${icon(ok ? 'check' : 'x', 22, 'fbicon')}<b>${ok ? pick(PRAISE) : '틀렸습니다'}</b>
       ${CUR.say ? `<button class="spk mini" data-say="${esc(CUR.say)}" aria-label="읽어 주기">${icon('speaker', 18)}</button>` : ''}</div>
       ${ok ? '' : mineLine(mineInfo(CUR)) + `<div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>`}
       ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}`;
     btn.textContent = '계속'; btn.disabled = false; btn.className = 'btn wide ' + (ok ? '' : 'red');
   }
   if (state === 'skip') {
-    fb.innerHTML = `<div class="fbhead">${icon('skip', 22, 'fbicon')}<b>건너뛰었어요</b>
+    fb.innerHTML = `<div class="fbhead">${icon('skip', 22, 'fbicon')}<b>건너뛰었습니다</b>
       ${CUR.say ? `<button class="spk mini" data-say="${esc(CUR.say)}" aria-label="읽어 주기">${icon('speaker', 18)}</button>` : ''}</div>
       <div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>
       ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}
-      <div class="fbexp">이 문제는 레슨 끝에 다시 나와요.</div>`;
+      <div class="fbexp">이 문제는 레슨 끝에 다시 나옵니다.</div>`;
     btn.textContent = '계속'; btn.disabled = false; btn.className = 'btn wide sky';
   }
 }
@@ -876,7 +876,7 @@ function closeLesson() {
   renderTop(); show(TAB);
 }
 function confirmQuit() {
-  modal(`<h3>정말 그만둘까요?</h3><p>지금 그만두면 이번 레슨에서 푼 내용이 저장되지 않아요.</p>
+  modal(`<h3>정말 그만두시겠습니까?</h3><p>지금 그만두면 이번 레슨에서 푼 내용이 저장되지 않습니다.</p>
     <button class="btn wide" data-act="stay">계속 공부하기</button><button class="btn wide ghost danger" data-act="quit">그만두기</button>`,
     { stay: closeModal, quit: closeLesson });
 }
@@ -969,14 +969,14 @@ function finishQuiz() {
   save();
   sfx.done(); buzz(40);
   CUR = null;
-  const msg = score === 100 ? '만점' : score >= 90 ? '거의 다 맞혔어요' : score >= 70 ? '꽤 맞혔어요' : score >= 50 ? '절반은 넘었어요' : '요약을 한 번 더 보고 풀어 봐요';
+  const msg = score === 100 ? '만점' : score >= 90 ? '거의 다 맞혔습니다' : score >= 70 ? '꽤 맞혔습니다' : score >= 50 ? '절반은 넘었습니다' : '요약을 한 번 더 보고 풀어 보십시오';
   const wrongN = n - right;
   $('.lhead', lessonEl()).classList.add('dim');
   $('.lin', lessonEl()).innerHTML = `<div class="qres">
     <div class="qtop"><div class="qscore" style="--p:${score}"><div class="qsin"><b>${score}</b><small>점</small></div>
       ${score >= 90 ? '<div class="seal"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>' : ''}</div></div>
     <h2>${msg}</h2><p class="dsub">${esc(LS.title)} · ${n}문제 중 ${right}문제 정답 · +${xp} XP</p>
-    ${LS.mockId ? `<p class="mocktime">${LS.timeUp ? '시간이 다 되어 남은 문제는 틀린 것으로 채점했어요' : `걸린 시간 ${fmtClock(Math.round((Date.now() - LS.t0) / 1000))} / ${LS.limit / 60}분`}</p>` : ''}
+    ${LS.mockId ? `<p class="mocktime">${LS.timeUp ? '시간이 다 되어 남은 문제는 틀린 것으로 채점했습니다' : `걸린 시간 ${fmtClock(Math.round((Date.now() - LS.t0) / 1000))} / ${LS.limit / 60}분`}</p>` : ''}
     ${wrongN ? `<button class="btn wide red" data-qretry>${icon('refresh', 20)} 틀린 ${wrongN}문제 다시 풀기</button>` : ''}
     <h3 class="sect">문제 다시 보기</h3>
     <div class="qlist">${LS.log.map(qReview).join('')}</div></div>`;
@@ -998,17 +998,17 @@ function finishLesson() {
   if (LS.lesson) { const d = S.done[LS.lesson.id] || { n: 0, best: 0 }; d.n++; d.best = Math.max(d.best, acc); S.done[LS.lesson.id] = d; }
   save();
   sfx.done(); buzz(40);
-  const title = perfect ? '하나도 안 틀렸어요' : LS.mode === 'exam' ? '평가 끝' : LS.mode === 'review' ? '단원 복습 끝' : LS.mode === 'practice' ? '복습 끝' : '레슨 끝';
+  const title = perfect ? '하나도 안 틀렸습니다' : LS.mode === 'exam' ? '평가 끝' : LS.mode === 'review' ? '단원 복습 끝' : LS.mode === 'practice' ? '복습 끝' : '레슨 끝';
   const box = $('.lin', lessonEl());
   $('.lhead', lessonEl()).classList.add('dim');
   box.innerHTML = `<div class="done">
     <div class="seal big"><span>참</span><span>잘</span><span>했</span><span>어</span><span>요</span></div>
     <h2>${title}</h2><p class="dsub">${LS.title ? esc(LS.title) : ''}</p>
-    ${LS.kind === 'mistakes' ? `<p class="dsub">오답 노트에서 ${LS.cleared || 0}문제를 지웠어요 · 남은 오답 ${Object.keys(S.wrong).filter(k => BYKEY[k] && itemSub(BYKEY[k]) === curSub().id).length}문제${LS.missed.size ? ' (이번에 틀린 문제는 남겨 뒀어요)' : ''}</p>` : ''}
+    ${LS.kind === 'mistakes' ? `<p class="dsub">오답 노트에서 ${LS.cleared || 0}문제를 지웠습니다 · 남은 오답 ${Object.keys(S.wrong).filter(k => BYKEY[k] && itemSub(BYKEY[k]) === curSub().id).length}문제${LS.missed.size ? ' (이번에 틀린 문제는 남겨 두었습니다)' : ''}</p>` : ''}
     <div class="dstats"><div class="ds gold"><small>획득 XP</small><b>${icon('bolt', 20)} ${xp}</b></div>
     <div class="ds jade"><small>정확도</small><b>${icon('target', 20)} ${acc}%</b></div>
     <div class="ds sky"><small>걸린 시간</small><b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</b></div></div>
-    ${LS.missed.size ? `<p class="dnote">${LS.skipped ? '틀리거나 건너뛴' : '틀린'} ${LS.missed.size}개는 <b>복습 → 오답 노트</b>에 모아 뒀어요.</p>` : ''}</div>`;
+    ${LS.missed.size ? `<p class="dnote">${LS.skipped ? '틀리거나 건너뛴' : '틀린'} ${LS.missed.size}개는 <b>복습 → 오답 노트</b>에 모아 두었습니다.</p>` : ''}</div>`;
   if (!reduceMotion()) confetti();
   setTimeout(() => sfx.stamp(), 520);
   const foot = $('.lfoot', lessonEl()); foot.className = 'lfoot';
@@ -1026,14 +1026,14 @@ function streakScreen(goal) {
     <div class="sflame">${icon('flame', 120)}<b>${S.streak}</b></div>
     <h2>${S.streak}일 연속 학습</h2>
     <div class="week">${week.map(k => { const d = new Date(k.replace(/-/g, '/')); return `<div class="wday ${S.days[k] ? 'on' : ''} ${k === t ? 'today' : ''}"><small>${wd[d.getDay()]}</small><i>${S.days[k] ? icon('check', 16) : ''}</i></div>`; }).join('')}</div>
-    <p class="motto">내일도 하면 <b>${S.streak + 1}일 연속</b>이에요.${goal ? '<br>오늘 목표 XP도 채웠어요.' : ''}</p></div>`;
+    <p class="motto">내일도 하면 <b>${S.streak + 1}일 연속</b>입니다.${goal ? '<br>오늘 목표 XP도 채웠습니다.' : ''}</p></div>`;
   sfx.done();
   $('#lcheck').onclick = () => { closeLesson(); afterLesson(); };
 }
 function afterLesson() { if (TAB === 'learn') scrollToCurrent(true); }
 function startPractice(kind) {
   const ex = PRACTICE[kind]();
-  if (!ex || !ex.length) { toast(kind === 'mistakes' ? '오답 노트가 비어 있어요' : '레슨을 하나 끝내면 열려요'); return; }
+  if (!ex || !ex.length) { toast(kind === 'mistakes' ? '오답 노트가 비어 있습니다' : '레슨을 하나 끝내면 열립니다'); return; }
   const titles = { mistakes: '오답 노트 복습', chars: '한자 훈음 연습', words: '어휘 연습', sents: '문장 연습' };
   startLesson({ mode: 'practice', kind, title: titles[kind], ex });
 }
@@ -1100,7 +1100,7 @@ function renderSoon(sub, tab) {
   return `<div class="page soonpage c-${sub.color}">${tab === 'learn' ? examBanner() : ''}
     <div class="soonmark${isHz(sub.mark) ? ' hz' : ''}">${esc(sub.mark)}</div>
     <h1>${esc(sub.name)}</h1><span class="soonbadge">준비 중</span>
-    <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 들어오면 여기에서 열려요.</p>
+    <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 들어오면 여기에서 열립니다.</p>
     ${examRange(sub.id, true)}
     ${tab === 'learn' ? `<div class="soonpath">${[0, 1, 2, 3, 4].map(i => `<div class="nrow" style="--x:${Math.round(Math.sin(i * 0.95) * 64)}px"><span class="node locked">${icon('lock', 30)}</span></div>`).join('')}</div>`
       : ''}
@@ -1193,7 +1193,7 @@ function renderLearn() {
     html += `</div></section>`;
   });
   const all = subLessons(curSub().id).every(L => S.done[L.id]);
-  html += `<p class="pathend"><span>${all ? '레슨을 다 끝냈어요. 시험 전에는 복습 탭에서 오답 노트를 풀어 보세요.' : '여기까지가 마지막 레슨이에요.'}</span></p>`;
+  html += `<p class="pathend"><span>${all ? '레슨을 다 끝냈습니다. 시험 전에는 복습 탭에서 오답 노트를 풀어 보십시오.' : '여기까지가 마지막 레슨입니다.'}</span></p>`;
   return html;
 }
 function nodePop(btn) {
@@ -1205,7 +1205,7 @@ function nodePop(btn) {
   const pop = document.createElement('div');
   pop.className = `npop c-${u.color} ${st}`;
   pop.innerHTML = `<b class="ptitle">${esc(L.t)}</b><span class="ppos">${pos}${d ? ` · ${d.n}번 완료 · 최고 ${d.best}%` : ''}</span>
-    ${st === 'locked' ? '<p class="plock">앞의 레슨을 끝내면 열려요.</p>' : `<button class="btn wide pgo" data-start="${btn.dataset.l}">${st === 'done' ? '다시 하기' : '시작하기'} <small>+${L.exam ? 20 : L.review ? 15 : 10} XP</small></button>`}`;
+    ${st === 'locked' ? '<p class="plock">앞의 레슨을 끝내면 열립니다.</p>' : `<button class="btn wide pgo" data-start="${btn.dataset.l}">${st === 'done' ? '다시 하기' : '시작하기'} <small>+${L.exam ? 20 : L.review ? 15 : 10} XP</small></button>`}`;
   btn.parentElement.appendChild(pop); btn.parentElement.classList.add('open');
   requestAnimationFrame(() => pop.classList.add('show'));
 }
@@ -1222,11 +1222,11 @@ function renderReview() {
   const { it } = learnedItems();
   const charN = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]).length;
   const card = (k, ic, c, t, d, dis) => `<button class="rcard c-${c}" data-practice="${k}" ${dis ? 'disabled' : ''}><span class="ricon">${icon(ic, 28)}</span><span class="rtxt"><b>${t}</b><small>${d}</small></span></button>`;
-  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀린 문제와 배운 내용을 다시 풀어요.</p>
-    ${card('mistakes', 'refresh', 'coral', '오답 노트', wrongN ? `틀렸던 문제 ${wrongN}개 다시 풀기` : '아직 틀린 문제가 없어요', !wrongN)}
+  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀린 문제와 배운 내용을 다시 풀 수 있습니다.</p>
+    ${card('mistakes', 'refresh', 'coral', '오답 노트', wrongN ? `틀렸던 문제 ${wrongN}개 다시 풀기` : '아직 틀린 문제가 없습니다', !wrongN)}
     ${sid === 'hanmun' ? `${card('chars', 'star', 'jade', '한자 훈음 연습', `배운 한자 ${charN}자에서 골라 풀기`)}
     ${card('words', 'book', 'violet', '어휘 연습', `독음 · 뜻 · 빈칸 채우기`)}
-    ${card('sents', 'bulb', 'sky', '문장 연습', it.sents.length ? `독음 · 풀이 · 풀이 순서` : '문장 레슨을 끝내면 열려요', !it.sents.length)}`
+    ${card('sents', 'bulb', 'sky', '문장 연습', it.sents.length ? `독음 · 풀이 · 풀이 순서` : '문장 레슨을 끝내면 열립니다', !it.sents.length)}`
       : card('mixed', 'bulb', 'sky', '개념 문제 연습', `배운 레슨에서 문제 · 용어 · 순서 맞추기를 골라 풀기`)}
     ${exams.length ? `<h2 class="sect">${icon('crown', 22)} 시험 대비</h2>` : ''}
     ${exams.map((L) => `<button class="rcard c-ink" data-lesson="${L.id}"><span class="ricon">${icon('crown', 26)}</span><span class="rtxt"><b>${esc(L.t)}</b><small>${L.exam.map(id => ALL_UNITS.find(u => u.id === id).no).join(' · ')} · ${L.exam.length > 2 ? 25 : 20}문제${S.done[L.id] ? ` · 최고 ${S.done[L.id].best}%` : ''}</small></span></button>`).join('')}
@@ -1242,7 +1242,7 @@ function renderQuiz() {
   const hist = (S.quiz || []).slice(0, 8);
   const best = (S.quiz || []).length ? Math.max(...S.quiz.map(h => h.s)) : null;
   return `<div class="page quiz"><h1 class="ptitle">퀴즈</h1>
-    <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점해요. 틀린 문제는 오답 노트에 모여요.</p>
+    <p class="plead">시험처럼 끝까지 푼 다음 한 번에 채점합니다. 틀린 문제는 오답 노트에 모입니다.</p>
     ${typeof battleCard === 'function' ? battleCard() : ''}
     ${mockCards()}
     <h2 class="sect">연습 퀴즈 범위</h2>
@@ -1254,14 +1254,14 @@ function renderQuiz() {
     <h2 class="sect">최근 기록${best != null ? `<span class="qbest">최고 ${best}점</span>` : ''}</h2>
     ${hist.length ? `<div class="qhist">${hist.map(h => `<div class="qh"><span class="qhs ${h.s >= 90 ? 'hi' : h.s >= 70 ? 'mid' : 'lo'}">${h.s}</span>
       <span class="qht"><b>${esc(h.r)}</b><small>${h.d.slice(5).replace('-', '월 ')}일 · ${h.n}문제</small></span></div>`).join('')}</div>`
-      : `<p class="empty">아직 푼 퀴즈가 없어요.</p>`}
+      : `<p class="empty">아직 푼 퀴즈가 없습니다.</p>`}
   </div>`;
 }
 
 function mockCards() {
   const ms = SU().mock || [];
   if (!ms.length) return '';
-  return `<h2 class="sect">모의고사</h2><p class="mocklead">학교 시험처럼 정해진 ${ms[0].items.length}문항을 ${ms[0].min}분 안에 풀어요. 문항당 ${Math.round(100 / ms[0].items.length)}점.</p>
+  return `<h2 class="sect">모의고사</h2><p class="mocklead">학교 시험처럼 정해진 ${ms[0].items.length}문항을 ${ms[0].min}분 안에 풉니다. 문항당 ${Math.round(100 / ms[0].items.length)}점.</p>
     <div class="mocks">${ms.map((m, i) => { const r = (S.mock || {})[m.id];
       return `<button class="mock" data-mock="${i}"><span class="mno">${esc(m.t)}</span>
         <span class="mtx"><b>${esc(curSub().name)} 모의고사 ${esc(m.t)}</b><small>${m.items.length}문항 · ${m.min}분${r ? ` · ${r.n}번 풂` : ''}</small></span>
@@ -1269,7 +1269,7 @@ function mockCards() {
 }
 function startMock(i) {
   const m = SU().mock[i];
-  modal(`<h3>${esc(curSub().name)} 모의고사 ${esc(m.t)}</h3><p>${m.items.length}문항 · 제한 시간 ${m.min}분이에요. 시간이 다 되면 남은 문제는 틀린 것으로 채점해요.</p>
+  modal(`<h3>${esc(curSub().name)} 모의고사 ${esc(m.t)}</h3><p>${m.items.length}문항 · 제한 시간 ${m.min}분입니다. 시간이 다 되면 남은 문제는 틀린 것으로 채점합니다.</p>
     <button class="btn wide" data-act="go">시작하기</button><button class="btn wide ghost" data-act="no">다음에</button>`,
     { go: () => { closeModal(); startLesson({ mode: 'quiz', mockId: m.id, limit: m.min * 60, title: `${curSub().name} 모의고사 ${m.t}`, ex: m.items.map(X.exam) }); }, no: closeModal });
 }
@@ -1293,7 +1293,7 @@ function timeUp() {
     const e = LS.q[i]; LS.log.push({ e, ok: false, mine: '(시간 종료)', d: '' }); LS.wrong++;
     if (e.key) S.wrong[e.key] = (S.wrong[e.key] || 0) + 1;
   }
-  save(); toast('시간이 다 되었어요'); finishQuiz();
+  save(); toast('시간이 다 되었습니다'); finishQuiz();
 }
 
 /* ════════ 요약 · 노트 화면 ════════ */
@@ -1355,7 +1355,7 @@ function noteList() {
     if (terms.length) out += `<div class="ncard terms"><b>용어 더하기</b><ul>${terms.map(x => `<li><b>${esc(x.t)}</b> ${hid(x.d)}</li>`).join('')}</ul></div>`;
     out += `</section>`;
   });
-  return out || `<p class="empty">찾는 내용이 없어요.</p>`;
+  return out || `<p class="empty">찾는 내용이 없습니다.</p>`;
 }
 
 /* ════════ 프로필 화면 ════════ */
@@ -1388,41 +1388,41 @@ function renderProfile() {
     <div class="goals">${[10, 20, 30, 50].map(g => `<button class="chip ${S.settings.goal === g ? 'on' : ''}" data-goal="${g}">${g} XP<small>${{ 10: '가볍게', 20: '보통', 30: '열심히', 50: '시험 기간' }[g]}</small></button>`).join('')}</div>
     <h2 class="sect">설정</h2>
     <div class="sets">
-      ${tg('sound', '효과음')}${tg('vib', '진동')}${tg('tts', '읽어 주기', '한자와 독음을 소리 내어 읽어요')}
-      ${tg('all', '모든 레슨 열기', '시험 전에 원하는 레슨부터 공부해요')}
+      ${tg('sound', '효과음')}${tg('vib', '진동')}${tg('tts', '읽어 주기', '한자와 독음을 소리 내어 읽습니다')}
+      ${tg('all', '모든 레슨 열기', '시험 전에 원하는 레슨부터 공부할 수 있습니다')}
       <div class="set"><span><b>화면 테마</b></span><div class="seg">${[['system', '자동'], ['light', '밝게'], ['dark', '어둡게']].map(([v, l]) => `<button data-theme-set="${v}" class="${S.settings.theme === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     </div>
     <h2 class="sect">진행 상황 백업</h2>
-    <p class="plead">앱을 지우거나 새 버전으로 다시 설치하기 전에 백업 코드를 복사해 두세요.</p>
+    <p class="plead">앱을 지우거나 새 버전으로 다시 설치하기 전에 백업 코드를 복사해 두십시오.</p>
     <div class="row2"><button class="btn ghost wide" data-act="export">백업 코드 복사</button><button class="btn ghost wide" data-act="import">백업 불러오기</button></div>
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
-    ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
+    ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있습니다.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.29</p></div>`;
+    <p class="about">오티링고 v1.30</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));
-  modal(`<h3>백업 코드</h3><p>아래 코드를 메모장이나 메신저에 붙여 넣어 보관하세요.</p><textarea class="code" readonly>${code}</textarea>
+  modal(`<h3>백업 코드</h3><p>아래 코드를 메모장이나 메신저에 붙여 넣어 보관하십시오.</p><textarea class="code" readonly>${code}</textarea>
     <button class="btn wide" data-act="copy">복사하기</button><button class="btn wide ghost" data-act="close">닫기</button>`, {
     copy: () => {
       const ta = $('#modal textarea'); let ok = false;
       try { if (NATIVE && NATIVE.copy) { NATIVE.copy(code); ok = true; } } catch (e) { }
       if (!ok) { ta.select(); try { ok = document.execCommand('copy'); } catch (e) { } }
-      if (!ok && navigator.clipboard) { navigator.clipboard.writeText(code).then(() => toast('복사했어요')); return; }
-      toast(ok ? '복사했어요' : '코드를 길게 눌러 복사해 주세요');
+      if (!ok && navigator.clipboard) { navigator.clipboard.writeText(code).then(() => toast('복사했습니다')); return; }
+      toast(ok ? '복사했습니다' : '코드를 길게 눌러 복사해 주십시오');
     }, close: closeModal
   });
 }
 function importCode() {
-  modal(`<h3>백업 불러오기</h3><p>복사해 둔 백업 코드를 붙여 넣으세요. 지금 기록은 덮어써져요.</p><textarea class="code" placeholder="백업 코드"></textarea>
+  modal(`<h3>백업 불러오기</h3><p>복사해 둔 백업 코드를 붙여 넣으십시오. 지금 기록은 덮어써집니다.</p><textarea class="code" placeholder="백업 코드"></textarea>
     <button class="btn wide" data-act="load">불러오기</button><button class="btn wide ghost" data-act="close">취소</button>`, {
     load: () => {
       try {
         const s = JSON.parse(decodeURIComponent(escape(atob($('#modal textarea').value.trim()))));
         if (!s || s.v !== 1) throw 0;
         S = Object.assign(JSON.parse(JSON.stringify(DEF)), s, { settings: Object.assign({}, DEF.settings, s.settings) }); save();
-        closeModal(); applyTheme(); renderTop(); show(TAB); toast('기록을 불러왔어요');
-      } catch (e) { toast('코드가 올바르지 않아요'); }
+        closeModal(); applyTheme(); renderTop(); show(TAB); toast('기록을 불러왔습니다');
+      } catch (e) { toast('코드가 올바르지 않습니다'); }
     }, close: closeModal
   });
 }
@@ -1483,15 +1483,15 @@ document.addEventListener('click', ev => {
     const a = act.dataset.act;
     if (a === 'export') exportCode();
     if (a === 'import') importCode();
-    if (a === 'reset') modal(`<h3>처음부터 다시 할까요?</h3><p>XP, 연속 학습, 끝낸 레슨, 오답 노트가 모두 지워져요.</p>
+    if (a === 'reset') modal(`<h3>처음부터 다시 하시겠습니까?</h3><p>XP, 연속 학습, 끝낸 레슨, 오답 노트가 모두 지워집니다.</p>
       <button class="btn wide ghost" data-act="close">취소</button><button class="btn wide red" data-act="wipe">모두 지우기</button>`,
-      { close: closeModal, wipe: () => { const keep = S.settings; S = JSON.parse(JSON.stringify(DEF)); S.settings = keep; save(); closeModal(); renderTop(); show('learn'); toast('처음부터 시작해요'); } });
+      { close: closeModal, wipe: () => { const keep = S.settings; S = JSON.parse(JSON.stringify(DEF)); S.settings = keep; save(); closeModal(); renderTop(); show('learn'); toast('처음부터 시작합니다'); } });
   }
 });
 document.addEventListener('change', ev => {
   const s = ev.target.closest('[data-set]'); if (!s) return;
   S.settings[s.dataset.set] = s.checked; save(); renderTop();
-  if (s.dataset.set === 'tts' && s.checked) tts.say('읽어 주기를 켰어요');
+  if (s.dataset.set === 'tts' && s.checked) tts.say('읽어 주기를 켰습니다');
 });
 document.addEventListener('input', ev => {
   if (ev.target.id === 'nq') { NOTE_Q = ev.target.value; $('#nlist').innerHTML = noteList(); }
