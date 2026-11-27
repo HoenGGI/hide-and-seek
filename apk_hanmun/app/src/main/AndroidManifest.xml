@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- 친구와 대결: 휴대폰끼리 중계 서버로 이야기 -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- lets TextToSpeech find the installed speech engine on Android 11+ -->
     <queries>
