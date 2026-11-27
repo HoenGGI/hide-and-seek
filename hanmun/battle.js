@@ -417,10 +417,10 @@ function bRender() {
   else if (v === 'setup') body = bSetupHtml();
   else if (v === 'join') body = bJoinHtml();
   else if (v === 'connecting') body = `<div class="bcenter"><div class="bspin"></div><p>대결 서버에 연결하는 중…</p></div>`;
-  else if (v === 'error') body = `<div class="bcenter"><p class="bbig">😥</p><p>${esc(BT.err || '문제가 생겼어요.')}</p><button class="btn wide" data-b="menu">처음으로</button></div>`;
-  else if (c) body = c.phase === 'wait' ? `<div class="bcenter"><div class="bspin"></div><p>${c.heard ? '대결이 이미 진행 중이에요. 다음 문제부터 함께 풀어요!' : esc(BT.pin) + '번 방에 들어가는 중…'}</p></div>`
+  else if (v === 'error') body = `<div class="bcenter"><p>${esc(BT.err || '문제가 생겼어요.')}</p><button class="btn wide" data-b="menu">처음으로</button></div>`;
+  else if (c) body = c.phase === 'wait' ? `<div class="bcenter"><div class="bspin"></div><p>${c.heard ? '이미 시작한 대결이에요. 다음 문제부터 같이 풀어요.' : esc(BT.pin) + '번 방에 들어가는 중…'}</p></div>`
     : c.phase === 'lobby' ? bLobbyHtml() : c.phase === 'q' ? bQuestionHtml() : c.phase === 'rev' ? bRevealHtml() : c.phase === 'end' ? bEndHtml()
-    : `<div class="bcenter"><p class="bbig">🚪</p><p>${esc(c.why || '대결이 끝났어요.')}</p><button class="btn wide" data-b="close">나가기</button></div>`;
+    : `<div class="bcenter"><p>${esc(c.why || '대결이 끝났어요.')}</p><button class="btn wide" data-b="close">나가기</button></div>`;
   const title = BT.pin ? `방 번호 <b>${esc(BT.pin)}</b>` : '친구와 대결';
   el.innerHTML = `<div class="bhead"><button class="iconbtn" data-b="back" aria-label="나가기">${icon('x', 26)}</button><div class="btitle">${title}</div></div>
     <div class="bbanner" hidden></div><div class="bbody"><div class="bin">${body}</div></div>`;
@@ -431,7 +431,7 @@ function bRender() {
 function bMenuHtml() {
   const sub = curSub();
   return `<div class="bhero"><div class="bshapes">${[0, 1, 2, 3].map(i => `<span class="c-${B_COLORS[i]}">${bShape(i, 30)}</span>`).join('')}</div>
-      <h2>친구와 ${esc(sub.name)} 대결</h2><p>같은 문제를 동시에 풀어요. 빨리 맞힐수록 점수가 높아요!</p></div>
+      <h2>친구와 ${esc(sub.name)} 대결</h2><p>같은 문제를 동시에 풀고, 빨리 맞힐수록 점수를 더 받아요.</p></div>
     <label class="bfield"><span>내 별명</span><input id="bname" maxlength="10" autocomplete="off" placeholder="예: 역사왕" value="${esc(bName())}"></label>
     <button class="btn wide" data-b="setup">${icon('crown', 22)} 방 만들기</button>
     <button class="btn wide sky" data-b="join">${icon('user', 22)} 친구 방에 참가하기</button>
@@ -464,7 +464,7 @@ function bLobbyHtml() {
   const c = BT.c, info = c.info || {}, host = BT.role === 'host';
   return `<div class="bpinbox"><small>방 번호</small><b>${esc(BT.pin.replace(/(\d{3})(\d{3})/, '$1 $2'))}</b>
       <span>${esc(info.subName || '')} · ${esc(info.range || '')} · ${info.n || ''}문제</span></div>
-    ${host ? `<p class="bhint">친구에게 이 번호를 알려 주세요. 친구는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 돼요.</p>` : `<p class="bhint">들어왔어요! 방장이 시작하기를 기다리는 중이에요.</p>`}
+    ${host ? `<p class="bhint">친구에게 이 번호를 알려 주세요. 친구는 오티링고 → 퀴즈 → <b>친구와 대결</b> → <b>참가하기</b>에서 넣으면 돼요.</p>` : `<p class="bhint">들어왔어요. 방장이 시작하면 문제가 나와요.</p>`}
     <h3 class="sect">참가자 <span class="bpc"></span></h3>
     <div class="bplist"></div>
     ${host ? `<button class="btn wide bgo" data-b="start">대결 시작</button>` : `<div class="bcenter small"><div class="bspin"></div></div>`}`;
@@ -493,7 +493,7 @@ function bQuestionHtml() {
     <div class="btbar"><i></i></div>
     <div class="bq"><h2 class="bqt">${title}</h2>${box}</div>
     <div class="btiles${long ? ' long' : ''}${q.item && q.item.hz ? ' hzt' : ''}">${opts.map((h, j) => `<button class="btile c-${B_COLORS[j]}" data-bt="${j}"><span class="bts">${bShape(j)}</span><span class="btx">${h}</span></button>`).join('')}</div>
-    <p class="bwait" hidden>답을 냈어요! 다른 친구들을 기다리는 중…</p>`;
+    <p class="bwait" hidden>답을 냈어요. 다른 친구들을 기다리는 중…</p>`;
 }
 function bStartClock() {
   const q = BT.c.q, bar = $('.btbar i', BT.el), num = $('.bclock', BT.el);
@@ -501,7 +501,7 @@ function bStartClock() {
     const left = Math.max(0, q.until - Date.now());
     if (bar) bar.style.width = (100 * left / (q.dur * 1000)) + '%';
     if (num) { const s = Math.ceil(left / 1000); num.textContent = s; num.classList.toggle('low', s <= 5); }
-    if (!left) { clearInterval(BT.clock); BT.clock = null; $$('.btile', BT.el).forEach(b => b.disabled = true); const w = $('.bwait', BT.el); if (w && q.mine < 0) { w.hidden = false; w.textContent = '시간이 다 됐어요!'; } }
+    if (!left) { clearInterval(BT.clock); BT.clock = null; $$('.btile', BT.el).forEach(b => b.disabled = true); const w = $('.bwait', BT.el); if (w && q.mine < 0) { w.hidden = false; w.textContent = '시간 끝'; } }
   };
   tick(); BT.clock = setInterval(tick, 200);
 }
@@ -512,14 +512,14 @@ function bRevealHtml() {
   const myRank = r.board.findIndex(p => p.id === BT.me.id) + 1;
   const mine = r.board[myRank - 1];
   const last = q.i + 1 >= r.n;
-  return `<div class="brev ${me.ok ? 'ok' : 'no'}"><b>${me.ok ? '정답!' : me.c < 0 ? '시간 초과' : '아쉬워요'}</b>
-      <span>${me.ok ? `+${me.gain}점${mine && mine.streak > 1 ? ` · ${mine.streak}연속 정답 🔥` : ''}` : '다음 문제에서 만회해요!'}</span></div>
+  return `<div class="brev ${me.ok ? 'ok' : 'no'}"><b>${me.ok ? '정답!' : me.c < 0 ? '시간 초과' : '틀렸어요'}</b>
+      <span>${me.ok ? `+${me.gain}점${mine && mine.streak > 1 ? ` · ${mine.streak}연속 정답` : ''}` : '0점'}</span></div>
     <div class="bans"><small>정답</small><div class="bansv"><span class="bts c-${B_COLORS[r.right]}">${bShape(r.right, 18)}</span>${rightHtml}</div>
       ${q.item && q.item.exp ? `<p class="bexp">${hzWrap(q.item.exp)}</p>` : ''}</div>
     <h3 class="sect">순위 <small class="bmyrank">나는 ${myRank}등</small></h3>
     ${bRankList(r.board.slice(0, 5))}
     ${BT.role === 'host' ? `<button class="btn wide bgo" data-b="next">${last ? '최종 결과 보기' : '다음 문제'} ›</button><p class="bnote">8초 뒤에 자동으로 넘어가요.</p>`
-      : `<p class="bnote">${last ? '곧 최종 결과가 나와요!' : '곧 다음 문제가 나와요!'}</p>`}`;
+      : `<p class="bnote">${last ? '잠시 후 최종 결과가 나와요.' : '잠시 후 다음 문제가 나와요.'}</p>`}`;
 }
 function bRankList(list) {
   return `<ol class="brank">${list.map((p, i) => `<li class="${p.id === BT.me.id ? 'me' : ''}"><span class="brk">${i + 1}</span><span class="brn">${esc(p.name)}${p.id === BT.me.id ? ' (나)' : ''}</span><b>${p.score.toLocaleString()}</b></li>`).join('')}</ol>`;

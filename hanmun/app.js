@@ -199,8 +199,8 @@ function fakeReading(r) {
 }
 function expOf(item) {
   if (!item) return '';
-  if (item.kind === 'word') return `${item.h}(${item.r}) — ${item.m}`;
-  if (item.kind === 'sent') return `${readingToe(item)} — ${item.m}`;
+  if (item.kind === 'word') return `${item.h}(${item.r}): ${item.m}`;
+  if (item.kind === 'sent') return `${readingToe(item)}: ${item.m}`;
   if (item.kind === 'char') return `${item.ch} ${item.hun}`;
   return item.exp || '';
 }
@@ -669,7 +669,7 @@ const PRACTICE = {
 
 /* ════════ 레슨 진행 ════════ */
 let LS = null, CUR = null;
-const PRAISE = ['정답이에요!', '훌륭해요!', '좋아요!', '완벽해요!', '잘했어요!', '바로 그거예요!'];
+const PRAISE = ['정답!', '맞았어요', '좋아요', '정확해요', '맞아요'];
 const lessonEl = () => $('#lesson');
 
 function startLesson(cfg) {
@@ -710,7 +710,7 @@ function footState(state, res) {
   if (state === 'match') { btn.textContent = '확인'; btn.disabled = true; btn.className = 'btn wide'; }
   if (state === 'ok' || state === 'no') {
     const ok = state === 'ok';
-    fb.innerHTML = `<div class="fbhead">${icon(ok ? 'check' : 'x', 22, 'fbicon')}<b>${ok ? pick(PRAISE) : '아쉬워요'}</b>
+    fb.innerHTML = `<div class="fbhead">${icon(ok ? 'check' : 'x', 22, 'fbicon')}<b>${ok ? pick(PRAISE) : '틀렸어요'}</b>
       ${CUR.say ? `<button class="spk mini" data-say="${esc(CUR.say)}" aria-label="읽어 주기">${icon('speaker', 18)}</button>` : ''}</div>
       ${ok ? '' : mineLine(mineInfo(CUR)) + `<div class="fbans"><span>정답</span> ${hzWrap(CUR.answerText)}</div>`}
       ${res && res.exp ? `<div class="fbexp">${hzWrap(res.exp)}</div>` : ''}`;
@@ -969,7 +969,7 @@ function finishQuiz() {
   save();
   sfx.done(); buzz(40);
   CUR = null;
-  const msg = score === 100 ? '만점이에요!' : score >= 90 ? '훌륭해요!' : score >= 70 ? '잘했어요!' : score >= 50 ? '조금만 더 힘내요!' : '요약을 보고 다시 도전해요!';
+  const msg = score === 100 ? '만점' : score >= 90 ? '거의 다 맞혔어요' : score >= 70 ? '꽤 맞혔어요' : score >= 50 ? '절반은 넘었어요' : '요약을 한 번 더 보고 풀어 봐요';
   const wrongN = n - right;
   $('.lhead', lessonEl()).classList.add('dim');
   $('.lin', lessonEl()).innerHTML = `<div class="qres">
@@ -998,7 +998,7 @@ function finishLesson() {
   if (LS.lesson) { const d = S.done[LS.lesson.id] || { n: 0, best: 0 }; d.n++; d.best = Math.max(d.best, acc); S.done[LS.lesson.id] = d; }
   save();
   sfx.done(); buzz(40);
-  const title = perfect ? '완벽해요!' : LS.mode === 'exam' ? '평가 완료!' : LS.mode === 'review' ? '단원 복습 완료!' : LS.mode === 'practice' ? '복습 완료!' : '레슨 완료!';
+  const title = perfect ? '하나도 안 틀렸어요' : LS.mode === 'exam' ? '평가 끝' : LS.mode === 'review' ? '단원 복습 끝' : LS.mode === 'practice' ? '복습 끝' : '레슨 끝';
   const box = $('.lin', lessonEl());
   $('.lhead', lessonEl()).classList.add('dim');
   box.innerHTML = `<div class="done">
@@ -1024,16 +1024,16 @@ function streakScreen(goal) {
   const wd = ['일', '월', '화', '수', '목', '금', '토'];
   box.innerHTML = `<div class="streak">
     <div class="sflame">${icon('flame', 120)}<b>${S.streak}</b></div>
-    <h2>${S.streak}일 연속 학습!</h2>
+    <h2>${S.streak}일 연속 학습</h2>
     <div class="week">${week.map(k => { const d = new Date(k.replace(/-/g, '/')); return `<div class="wday ${S.days[k] ? 'on' : ''} ${k === t ? 'today' : ''}"><small>${wd[d.getDay()]}</small><i>${S.days[k] ? icon('check', 16) : ''}</i></div>`; }).join('')}</div>
-    <p class="motto"><b>오늘도 한 걸음</b>, 꾸준히 자라고 있어요.${goal ? '<br><b>오늘의 목표도 달성했어요!</b>' : ''}</p></div>`;
+    <p class="motto">내일도 하면 <b>${S.streak + 1}일 연속</b>이에요.${goal ? '<br>오늘 목표 XP도 채웠어요.' : ''}</p></div>`;
   sfx.done();
   $('#lcheck').onclick = () => { closeLesson(); afterLesson(); };
 }
 function afterLesson() { if (TAB === 'learn') scrollToCurrent(true); }
 function startPractice(kind) {
   const ex = PRACTICE[kind]();
-  if (!ex || !ex.length) { toast(kind === 'mistakes' ? '오답 노트가 비어 있어요. 잘하고 있어요!' : '먼저 레슨을 하나 끝내 보세요'); return; }
+  if (!ex || !ex.length) { toast(kind === 'mistakes' ? '오답 노트가 비어 있어요' : '레슨을 하나 끝내면 열려요'); return; }
   const titles = { mistakes: '오답 노트 복습', chars: '한자 훈음 연습', words: '어휘 연습', sents: '문장 연습' };
   startLesson({ mode: 'practice', kind, title: titles[kind], ex });
 }
@@ -1100,8 +1100,7 @@ function renderSoon(sub, tab) {
   return `<div class="page soonpage c-${sub.color}">${tab === 'learn' ? examBanner() : ''}
     <div class="soonmark${isHz(sub.mark) ? ' hz' : ''}">${esc(sub.mark)}</div>
     <h1>${esc(sub.name)}</h1><span class="soonbadge">준비 중</span>
-    <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 추가되면 여기에서 열려요.<br>
-      교과서나 학습지, 공책 사진으로 한문처럼 레슨 · 퀴즈 · 요약 · 복습을 만들 수 있어요.</p>
+    <p class="soontxt">${esc(sub.name)} ${what}${josa(what, '은', '는')} 공부할 내용이 들어오면 여기에서 열려요.</p>
     ${examRange(sub.id, true)}
     ${tab === 'learn' ? `<div class="soonpath">${[0, 1, 2, 3, 4].map(i => `<div class="nrow" style="--x:${Math.round(Math.sin(i * 0.95) * 64)}px"><span class="node locked">${icon('lock', 30)}</span></div>`).join('')}</div>`
       : ''}
@@ -1194,7 +1193,7 @@ function renderLearn() {
     html += `</div></section>`;
   });
   const all = subLessons(curSub().id).every(L => S.done[L.id]);
-  html += `<p class="pathend"><span>${all ? '모든 레슨을 끝냈어요! 시험 전에는 복습 탭의 오답 노트를 풀어 보세요.' : '한 걸음씩, 꾸준히!'}</span></p>`;
+  html += `<p class="pathend"><span>${all ? '레슨을 다 끝냈어요. 시험 전에는 복습 탭에서 오답 노트를 풀어 보세요.' : '여기까지가 마지막 레슨이에요.'}</span></p>`;
   return html;
 }
 function nodePop(btn) {
@@ -1223,7 +1222,7 @@ function renderReview() {
   const { it } = learnedItems();
   const charN = uniqChars([...it.chars, ...it.words.flatMap(charsOf), ...it.sents.flatMap(charsOf)]).length;
   const card = (k, ic, c, t, d, dis) => `<button class="rcard c-${c}" data-practice="${k}" ${dis ? 'disabled' : ''}><span class="ricon">${icon(ic, 28)}</span><span class="rtxt"><b>${t}</b><small>${d}</small></span></button>`;
-  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀렸던 문제와 배운 내용을 다시 풀면서 실력을 다져요.</p>
+  return `<div class="page"><h1 class="ptitle">복습</h1><p class="plead">틀린 문제와 배운 내용을 다시 풀어요.</p>
     ${card('mistakes', 'refresh', 'coral', '오답 노트', wrongN ? `틀렸던 문제 ${wrongN}개 다시 풀기` : '아직 틀린 문제가 없어요', !wrongN)}
     ${sid === 'hanmun' ? `${card('chars', 'star', 'jade', '한자 훈음 연습', `배운 한자 ${charN}자에서 골라 풀기`)}
     ${card('words', 'book', 'violet', '어휘 연습', `독음 · 뜻 · 빈칸 채우기`)}
@@ -1255,7 +1254,7 @@ function renderQuiz() {
     <h2 class="sect">최근 기록${best != null ? `<span class="qbest">최고 ${best}점</span>` : ''}</h2>
     ${hist.length ? `<div class="qhist">${hist.map(h => `<div class="qh"><span class="qhs ${h.s >= 90 ? 'hi' : h.s >= 70 ? 'mid' : 'lo'}">${h.s}</span>
       <span class="qht"><b>${esc(h.r)}</b><small>${h.d.slice(5).replace('-', '월 ')}일 · ${h.n}문제</small></span></div>`).join('')}</div>`
-      : `<p class="empty">아직 푼 퀴즈가 없어요. 첫 퀴즈에 도전해 보세요!</p>`}
+      : `<p class="empty">아직 푼 퀴즈가 없어요.</p>`}
   </div>`;
 }
 
@@ -1399,7 +1398,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있어요.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.28 · 매일 조금씩, 꾸준히</p></div>`;
+    <p class="about">오티링고 v1.29</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));

@@ -1,5 +1,5 @@
 // Offline cache for the web version. Bump VERSION whenever the app files change.
-const VERSION = 'otilingo-v29';
+const VERSION = 'otilingo-v30';
 const FILES = ['./', 'index.html', 'app.js', 'data.js', 'history.js', 'subjects.js', 'exams.js', 'battle.js', 'hanja.woff2', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
