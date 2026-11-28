@@ -6,6 +6,6 @@ const SUBJECTS = [
   { id: 'korean', name: '국어', mark: '국', color: 'coral', data: KOREAN },
   { id: 'history', name: '역사', mark: '역', color: 'rose', data: HISTORY },
   { id: 'hanmun', name: '한문', mark: '漢', color: 'jade', data: { units: UNITS, summary: SUMMARY, exam: EXAM, mock: MOCK } },
-  { id: 'science', name: '과학', mark: '과', color: 'teal' },
+  { id: 'science', name: '과학', mark: '과', color: 'teal', data: SCIENCE },
 ];
 SUBJECTS.forEach(s => { s.ready = !!s.data; });
