@@ -1303,7 +1303,7 @@ function renderNotes() {
   const chips = [['all', '전체'], ...noteUnits().map(u => [u.id, u.no])];
   return `<div class="page notes"><h1 class="ptitle">요약</h1>
     <div class="seg big">${[['sum', '핵심 요약'], ['all', '전체 노트']].map(([m, l]) => `<button data-nmode="${m}" class="${NOTE_MODE === m ? 'on' : ''}">${l}</button>`).join('')}</div>
-    ${NOTE_MODE === 'all' ? `<div class="nsearch">${icon('search', 20)}<input id="nq" type="search" placeholder="${curSub().id === 'hanmun' ? '한자, 독음, 뜻으로 찾기' : '용어, 사건, 인물로 찾기'}" value="${esc(NOTE_Q)}" autocomplete="off"></div>` : ''}
+    ${NOTE_MODE === 'all' ? `<div class="nsearch">${icon('search', 20)}<input id="nq" type="search" placeholder="${curSub().id === 'hanmun' ? '한자, 독음, 뜻으로 찾기' : curSub().id === 'korean' ? '용어, 개념, 자음·모음으로 찾기' : '용어, 사건, 인물로 찾기'}" value="${esc(NOTE_Q)}" autocomplete="off"></div>` : ''}
     <div class="chips">${chips.map(([id, t]) => `<button class="chip ${NOTE_U === id ? 'on' : ''}" data-nu="${id}">${t}</button>`).join('')}
       <button class="chip hide ${NOTE_HIDE ? 'on' : ''}" data-hide="1">${NOTE_HIDE ? '답 가림' : '답 가리기'}</button></div>
     <div id="nlist">${notesBody()}</div></div>`;
@@ -1398,7 +1398,7 @@ function renderProfile() {
     <button class="btn ghost wide danger" data-act="reset">처음부터 다시 하기</button>
     ${NATIVE ? '' : `<h2 class="sect">안드로이드 앱</h2><p class="plead">휴대폰에 앱으로 설치하면 인터넷 없이도 공부할 수 있습니다.</p>
     <a class="btn wide" href="otilingo.apk" download>안드로이드 앱(APK) 받기</a>`}
-    <p class="about">오티링고 v1.31</p></div>`;
+    <p class="about">오티링고 v1.32</p></div>`;
 }
 function exportCode() {
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(S))));

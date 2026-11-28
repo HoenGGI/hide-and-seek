@@ -3,7 +3,7 @@
 // color는 jade · coral · sky · violet · teal · ochre · rose · ink 중에서 골라요.
 'use strict';
 const SUBJECTS = [
-  { id: 'korean', name: '국어', mark: '국', color: 'coral' },
+  { id: 'korean', name: '국어', mark: '국', color: 'coral', data: KOREAN },
   { id: 'history', name: '역사', mark: '역', color: 'rose', data: HISTORY },
   { id: 'hanmun', name: '한문', mark: '漢', color: 'jade', data: { units: UNITS, summary: SUMMARY, exam: EXAM, mock: MOCK } },
   { id: 'science', name: '과학', mark: '과', color: 'teal' },

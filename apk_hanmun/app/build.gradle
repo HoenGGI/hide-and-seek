@@ -6,7 +6,7 @@ plugins {
 def webOut = layout.buildDirectory.dir('generated/web')
 def syncWeb = tasks.register('syncWeb', Sync) {
     from('../../hanmun') {
-        include 'index.html', 'app.js', 'data.js', 'history.js', 'subjects.js', 'exams.js', 'battle.js', 'hanja.woff2', 'icon-192.png'
+        include 'index.html', 'app.js', 'data.js', 'history.js', 'korean.js', 'subjects.js', 'exams.js', 'battle.js', 'hanja.woff2', 'icon-192.png'
     }
     into webOut
 }
@@ -19,8 +19,8 @@ android {
         applicationId 'com.hoenggi.ilsin'
         minSdk 24
         targetSdk 35
-        versionCode 32
-        versionName '1.31'
+        versionCode 33
+        versionName '1.32'
     }
 
     sourceSets {
